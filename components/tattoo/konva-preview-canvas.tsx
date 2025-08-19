@@ -1,13 +1,17 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Stage, Layer, Image as KonvaImage, Transformer } from "react-konva"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, Zap, RotateCcw, Download } from "lucide-react"
 import Konva from "konva"
 import { useCanvasComposer } from "@/hooks/useCanvasComposer"
 import { useFalAI } from "@/hooks/useFalAI"
+
+// Components
+import { CanvasControlButtons } from "./canvas-control-buttons"
+import { GeneratedImageView } from "./generated-image-view"
+import { LoadingView } from "./loading-view"
+import { KonvaStage } from "./konva-stage"
+import { EmptyState } from "./empty-state"
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null
@@ -48,44 +52,44 @@ const calculateStageSize = (containerWidth: number, img?: HTMLImageElement) => {
       width = height * aspectRatio
     }
 
-    return { width, height }
+    return { width: Math.round(width), height: Math.round(height) }
   }
 
-  return { width: containerWidth, height: containerHeight }
+  return { width: containerWidth, height: 500 }
 }
 
 // Helper function to calculate appropriate scale for tattoo image
 const calculateTattooScale = (tattooImg: HTMLImageElement, stageWidth: number, stageHeight: number) => {
-  // Target size should be roughly 20-30% of the stage size
-  const maxTattooWidth = stageWidth * 0.25
-  const maxTattooHeight = stageHeight * 0.25
+  const maxSize = Math.min(stageWidth, stageHeight) * 0.3
+  const tattooAspectRatio = tattooImg.width / tattooImg.height
+  let targetWidth = maxSize
+  let targetHeight = maxSize / tattooAspectRatio
   
-  // Calculate scale to fit within the target size
-  const scaleX = maxTattooWidth / tattooImg.width
-  const scaleY = maxTattooHeight / tattooImg.height
+  if (targetHeight > maxSize) {
+    targetHeight = maxSize
+    targetWidth = maxSize * tattooAspectRatio
+  }
   
-  // Use the smaller scale to maintain aspect ratio
-  const scale = Math.min(scaleX, scaleY, 1) // Don't upscale beyond original size
-  
-  return Math.max(scale, 0.1) // Minimum scale of 0.1 to ensure it's not too tiny
+  return Math.min(targetWidth / tattooImg.width, targetHeight / tattooImg.height)
 }
 
 export function KonvaPreviewCanvas({
   baseImage,
   tattooImage,
-  bodyPart = "",
-  onApplyTattoo,
+  bodyPart,
   isApplying,
   onError,
 }: KonvaPreviewCanvasProps) {
+  // State
   const [baseImageObj, setBaseImageObj] = useState<HTMLImageElement | null>(null)
   const [tattooImageObj, setTattooImageObj] = useState<HTMLImageElement | null>(null)
-  const [stageSize, setStageSize] = useState({ width: 800, height: 600 })
-  const [tattooScale, setTattooScale] = useState(1)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [stageSize, setStageSize] = useState({ width: 800, height: 500 })
+  const [tattooScale, setTattooScale] = useState(1)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
-  
+
+  // Refs
   const stageRef = useRef<Konva.Stage>(null)
   const tattooRef = useRef<Konva.Image>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -99,122 +103,106 @@ export function KonvaPreviewCanvas({
     },
     onError: (error) => {
       onError?.(error)
-    },
+    }
   })
 
-  // Update stage size based on container
+  // Update stage size when container resizes
   const updateStageSize = () => {
-    if (!containerRef.current) return
-    const containerWidth = containerRef.current.clientWidth
-    const newSize = calculateStageSize(containerWidth, baseImageObj || undefined)
-    setStageSize(newSize)
+    if (containerRef.current && baseImageObj) {
+      const containerWidth = containerRef.current.offsetWidth - 32
+      const newStageSize = calculateStageSize(containerWidth, baseImageObj)
+      setStageSize(newStageSize)
+    }
   }
 
-  // Handle image loading with consolidated effect
+  // Load base image
   useEffect(() => {
-    const loadImages = async () => {
+    if (baseImage) {
       setIsLoading(true)
-      
-      // Clear generated image when new images are uploaded
-      setGeneratedImage(null)
-      
-      try {
-        // Load base image
-        if (baseImage) {
-          const baseImg = await loadImage(baseImage)
-          setBaseImageObj(baseImg)
-          
-          // Update stage size with new image
+      loadImage(baseImage)
+        .then((img) => {
+          setBaseImageObj(img)
           if (containerRef.current) {
-            const containerWidth = containerRef.current.clientWidth
-            const newSize = calculateStageSize(containerWidth, baseImg)
-            setStageSize(newSize)
+            const containerWidth = containerRef.current.offsetWidth - 32
+            const newStageSize = calculateStageSize(containerWidth, img)
+            setStageSize(newStageSize)
           }
-        } else {
-          setBaseImageObj(null)
-          updateStageSize()
-        }
-
-        // Load tattoo image
-        if (tattooImage) {
-          const tattooImg = await loadImage(tattooImage)
-          setTattooImageObj(tattooImg)
-          
-          // Calculate appropriate scale for the tattoo
-          const scale = calculateTattooScale(tattooImg, stageSize.width, stageSize.height)
-          setTattooScale(scale)
-          
-          setSelectedId("tattoo")
-        } else {
-          setTattooImageObj(null)
-          setTattooScale(1)
-          setSelectedId(null)
-        }
-      } catch (error) {
-        console.error('Error loading images:', error)
-      } finally {
-        setIsLoading(false)
-      }
+        })
+        .catch(() => {
+          onError?.('Failed to load base image')
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
+    } else {
+      setBaseImageObj(null)
+      setStageSize({ width: 800, height: 500 })
     }
+  }, [baseImage, onError])
 
-    loadImages()
-  }, [baseImage, tattooImage])
+  // Load tattoo image
+  useEffect(() => {
+    if (tattooImage) {
+      loadImage(tattooImage)
+        .then((img) => {
+          setTattooImageObj(img)
+          if (stageSize.width && stageSize.height) {
+            const scale = calculateTattooScale(img, stageSize.width, stageSize.height)
+            setTattooScale(scale)
+          }
+        })
+        .catch(() => {
+          onError?.('Failed to load tattoo image')
+        })
+    } else {
+      setTattooImageObj(null)
+      setSelectedId(null)
+    }
+  }, [tattooImage, stageSize.width, stageSize.height, onError])
 
-  // Handle resize and transformer selection
+  // Update tattoo scale when stage size changes
+  useEffect(() => {
+    if (tattooImageObj && stageSize.width && stageSize.height) {
+      const scale = calculateTattooScale(tattooImageObj, stageSize.width, stageSize.height)
+      setTattooScale(scale)
+    }
+  }, [tattooImageObj, stageSize])
+
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      setTimeout(updateStageSize, 100)
+      updateStageSize()
     }
 
-    // Setup resize listener
     window.addEventListener('resize', handleResize)
-    
-    // Initial size calculation
-    setTimeout(updateStageSize, 100)
+    updateStageSize()
 
-    // Handle transformer selection
-    if (selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
-      // Small delay to ensure the tattoo image is fully rendered
-      setTimeout(() => {
-        if (tattooRef.current && transformerRef.current) {
-          transformerRef.current.nodes([tattooRef.current])
-          transformerRef.current.getLayer()?.batchDraw()
-        }
-      }, 100)
+    return () => {
+      window.removeEventListener('resize', handleResize)
     }
+  }, [baseImageObj])
 
-    return () => window.removeEventListener('resize', handleResize)
-  }, [selectedId, baseImageObj])
-
-  // Separate effect for transformer updates when tattoo image changes
+  // Handle transformer attachment
   useEffect(() => {
-    if (selectedId === "tattoo" && tattooImageObj && tattooRef.current && transformerRef.current && !generatedImage) {
-      setTimeout(() => {
-        if (tattooRef.current && transformerRef.current) {
-          transformerRef.current.nodes([tattooRef.current])
-          transformerRef.current.getLayer()?.batchDraw()
-        }
-      }, 150)
-    } else if (transformerRef.current) {
-      // Clear transformer when nothing is selected
-      transformerRef.current.nodes([])
+    if (selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
+      transformerRef.current.nodes([tattooRef.current])
       transformerRef.current.getLayer()?.batchDraw()
     }
-  }, [selectedId, tattooImageObj, generatedImage])
+  }, [selectedId])
 
+  // Handle stage click (deselect)
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // If clicked on empty area, deselect
     if (e.target === e.target.getStage()) {
       setSelectedId(null)
-      return
-    }
-
-    // If clicked on tattoo, select it
-    if (e.target.name() === "tattoo") {
-      setSelectedId("tattoo")
     }
   }
 
+  // Handle tattoo selection
+  const handleTattooSelect = () => {
+    setSelectedId("tattoo")
+  }
+
+  // Apply tattoo using AI
   const handleApplyTattoo = async () => {
     if (!baseImage || !tattooImage) {
       onError?.("Please upload both a base image and a tattoo design")
@@ -228,93 +216,82 @@ export function KonvaPreviewCanvas({
       }
 
       // Compose the canvas images into a single image
-      console.log('Composing canvas images...')
       const composition = await composeImages(stageRef as React.RefObject<Konva.Stage>)
-      console.log('Canvas composition result:', {
-        dataUrlLength: composition.dataUrl.length,
-        width: composition.width,
-        height: composition.height,
-        dataUrlPreview: composition.dataUrl.substring(0, 100) + '...'
-      })
       
-      // Generate tattoo using FAL AI
-      const prompt = bodyPart.trim() 
-        ? `on ${bodyPart.trim()}, realistic tattoo application`
-        : "realistic tattoo application"
+      // Generate the tattoo application using FAL AI
+      const prompt = bodyPart ? `Apply this tattoo to the ${bodyPart}` : 'Apply this tattoo to the person'
       await generateTattoo(composition.dataUrl, prompt)
-      
-      // Call the original onApplyTattoo for any additional logic
-      onApplyTattoo()
     } catch (error) {
-      onError?.(error instanceof Error ? error.message : "Failed to generate tattoo")
+      const errorMessage = error instanceof Error ? error.message : "Failed to apply tattoo. Please try again."
+      onError?.(errorMessage)
     }
   }
 
+  // Reset canvas
   const resetCanvas = () => {
-    // Clear generated image first
+    setSelectedId(null)
     setGeneratedImage(null)
     
-    // Reset tattoo position if it exists
-    if (tattooRef.current) {
-      tattooRef.current.position({ x: stageSize.width / 2, y: stageSize.height / 2 })
-      tattooRef.current.scale({ x: tattooScale, y: tattooScale })
+    // Reset tattoo position and scale
+    if (tattooRef.current && tattooImageObj) {
+      tattooRef.current.position({
+        x: stageSize.width / 2,
+        y: stageSize.height / 2
+      })
+      const scale = calculateTattooScale(tattooImageObj, stageSize.width, stageSize.height)
+      tattooRef.current.scale({ x: scale, y: scale })
       tattooRef.current.rotation(0)
       tattooRef.current.getLayer()?.batchDraw()
-      setSelectedId("tattoo") // Re-select after reset
     }
   }
 
+  // Export canvas image
   const exportImage = () => {
-    // Always export the current canvas composition (base image + positioned tattoo)
-    if (stageRef.current) {
-      // Remember the current selection
-      const wasSelected = selectedId
+    if (!stageRef.current) {
+      onError?.("Canvas not available for export")
+      return
+    }
+
+    try {
+      const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 })
       
-      // Deselect transformer before export
-      setSelectedId(null)
-      setTimeout(() => {
-        const uri = stageRef.current!.toDataURL()
-        const link = document.createElement("a")
-        link.download = "tattoo-composition.png"
-        link.href = uri
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        // Restore selection after export
-        if (wasSelected && tattooImageObj) {
-          setTimeout(() => {
-            setSelectedId(wasSelected)
-          }, 100)
-        }
-      }, 100)
+      // Create download link
+      const link = document.createElement('a')
+      link.download = 'tattoo-canvas.png'
+      link.href = dataURL
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      onError?.("Failed to export canvas image")
     }
   }
 
-  const downloadGeneratedImage = async () => {
-    // Download the AI-generated result
-    if (generatedImage) {
-      try {
-        // Fetch the image as a blob to handle CORS
-        const response = await fetch(generatedImage)
-        const blob = await response.blob()
-        
-        // Create object URL from blob
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.download = "generated-tattoo.png"
-        link.href = url
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        // Clean up the object URL
-        URL.revokeObjectURL(url)
-      } catch (error) {
-        console.error('Failed to download generated image:', error)
-        onError?.('Failed to download image. Please try again.')
-      }
+  // Download generated image
+  const downloadGeneratedImage = () => {
+    if (!generatedImage) return
+
+    try {
+      const link = document.createElement('a')
+      link.download = 'generated-tattoo-result.png'
+      link.href = generatedImage
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      onError?.("Failed to download generated image")
     }
+  }
+
+  // Handle back to editor
+  const handleBackToEditor = () => {
+    setGeneratedImage(null)
+    // Re-select tattoo when returning to editor with a small delay
+    setTimeout(() => {
+      if (tattooImageObj) {
+        setSelectedId("tattoo")
+      }
+    }, 100)
   }
 
   return (
@@ -322,37 +299,17 @@ export function KonvaPreviewCanvas({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Preview Canvas</span>
-          <div className="flex gap-2">
-            {baseImage && tattooImage && (
-              <Button onClick={handleApplyTattoo} disabled={isApplying || isGenerating}>
-                {isApplying || isGenerating ? (
-                  <>
-                    <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4 mr-2" />
-                    Generate
-                  </>
-                )}
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={resetCanvas}>
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportImage}>
-              <Download className="w-4 h-4 mr-2" />
-              Export Canvas
-            </Button>
-            {generatedImage && (
-              <Button variant="default" size="sm" onClick={downloadGeneratedImage}>
-                <Download className="w-4 h-4 mr-2" />
-                Download Result
-              </Button>
-            )}
-          </div>
+          <CanvasControlButtons
+            baseImage={baseImage}
+            tattooImage={tattooImage}
+            generatedImage={generatedImage}
+            isApplying={isApplying}
+            isGenerating={isGenerating}
+            onApplyTattoo={handleApplyTattoo}
+            onReset={resetCanvas}
+            onExportCanvas={exportImage}
+            onDownloadResult={downloadGeneratedImage}
+          />
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -362,114 +319,28 @@ export function KonvaPreviewCanvas({
           style={{ minHeight: '500px' }}
         >
           {isLoading ? (
-            <div className="flex items-center justify-center text-gray-500 w-full h-96">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p>Loading images...</p>
-              </div>
-            </div>
+            <LoadingView />
           ) : generatedImage ? (
-            <div className="relative">
-              <img
-                src={generatedImage}
-                alt="Generated tattoo result"
-                className="max-w-full max-h-full object-contain rounded"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => {
-                  setGeneratedImage(null)
-                  // Re-select tattoo when returning to editor with a small delay
-                  setTimeout(() => {
-                    if (tattooImageObj) {
-                      setSelectedId("tattoo")
-                    }
-                  }, 100)
-                }}
-                title="Back to editor"
-              >
-                Edit
-              </Button>
-            </div>
+            <GeneratedImageView 
+              generatedImage={generatedImage}
+              onBackToEditor={handleBackToEditor}
+            />
           ) : baseImage ? (
-            <div className="relative">
-              <Stage
-                width={stageSize.width}
-                height={stageSize.height}
-                onClick={handleStageClick}
-                ref={stageRef}
-              >
-              <Layer>
-                {/* Base Image */}
-                {baseImageObj && (
-                  <KonvaImage
-                    image={baseImageObj}
-                    width={stageSize.width}
-                    height={stageSize.height}
-                  />
-                )}
-                
-                {/* Tattoo Image */}
-                {tattooImageObj && (
-                  <KonvaImage
-                    ref={tattooRef}
-                    image={tattooImageObj}
-                    x={stageSize.width / 2}
-                    y={stageSize.height / 2}
-                    offsetX={tattooImageObj.width / 2}
-                    offsetY={tattooImageObj.height / 2}
-                    scaleX={tattooScale}
-                    scaleY={tattooScale}
-                    draggable
-                    name="tattoo"
-                    onClick={() => setSelectedId("tattoo")}
-                    onTap={() => setSelectedId("tattoo")}
-                  />
-                )}
-
-                {/* Transformer for tattoo */}
-                {selectedId === "tattoo" && (
-                  <Transformer
-                    ref={transformerRef}
-                    boundBoxFunc={(oldBox, newBox) => {
-                      // Limit resize
-                      if (newBox.width < 20 || newBox.height < 20) {
-                        return oldBox
-                      }
-                      return newBox
-                    }}
-                    enabledAnchors={[
-                      'top-left',
-                      'top-right', 
-                      'bottom-left',
-                      'bottom-right'
-                    ]}
-                    rotateAnchorOffset={30}
-                  />
-                )}
-              </Layer>
-              </Stage>
-              
-              {/* Loading overlay */}
-              {isGenerating && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                  <div className="bg-white rounded-lg p-6 flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
-                    <p className="text-sm font-medium text-gray-700">Generating tattoo...</p>
-                    <p className="text-xs text-gray-500 mt-1">This may take a few moments</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <KonvaStage
+              ref={stageRef}
+              stageSize={stageSize}
+              baseImageObj={baseImageObj}
+              tattooImageObj={tattooImageObj}
+              tattooScale={tattooScale}
+              selectedId={selectedId}
+              isGenerating={isGenerating}
+              onStageClick={handleStageClick}
+              onTattooSelect={handleTattooSelect}
+              transformerRef={transformerRef}
+              tattooRef={tattooRef}
+            />
           ) : (
-            <div className="flex items-center justify-center text-gray-500 w-full h-96">
-              <div className="text-center">
-                <Upload className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Upload a base image to get started</p>
-              </div>
-            </div>
+            <EmptyState />
           )}
         </div>
 
