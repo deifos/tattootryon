@@ -1,9 +1,10 @@
 "use client"
 
-import { forwardRef, useState, useEffect } from "react"
+import React, { forwardRef, useEffect } from "react"
 import { Stage, Layer, Image as KonvaImage, Transformer } from "react-konva"
 import Konva from "konva"
 import { Loader2 } from "lucide-react"
+import { useImageLoader } from "@/hooks/useImageLoader"
 
 interface KonvaStageProps {
   stageSize: { width: number; height: number }
@@ -33,23 +34,16 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
     tattooRef,
     generatedImage,
   }, stageRef) => {
-    const [generatedImageObj, setGeneratedImageObj] = useState<HTMLImageElement | null>(null)
-
-    // Load generated image when available
+    // Load generated image using custom hook
+    const generatedImageLoader = useImageLoader()
+    
+    // Load generated image when it changes
     useEffect(() => {
-      if (generatedImage) {
-        const img = new window.Image()
-        img.crossOrigin = "anonymous"
-        img.onload = () => setGeneratedImageObj(img)
-        img.onerror = () => setGeneratedImageObj(null)
-        img.src = generatedImage
-      } else {
-        setGeneratedImageObj(null)
-      }
-    }, [generatedImage])
+      generatedImageLoader.loadImage(generatedImage || null)
+    }, [generatedImage]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // Use generated image as base if available, otherwise use base image
-    const displayImageObj = generatedImageObj || baseImageObj
+    const displayImageObj = generatedImageLoader.imageObj || baseImageObj
 
     return (
       <div className="relative">

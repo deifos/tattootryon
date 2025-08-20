@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useCallback, useEffect } from "react"
+import { useRef, useCallback, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -40,26 +40,18 @@ export function ImageUploadCard({
   bodyPartPlaceholder = "e.g., arm, back, shoulder, leg...",
 }: ImageUploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const { dataUrl, file, error, isLoading, readFile, reset } = useFileReader({
+  const fileReaderOptions = useMemo(() => ({
     maxSizeInMB: 10,
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
-  })
-
-  // Handle successful file read
-  useEffect(() => {
-    if (dataUrl && file) {
+    onSuccess: (dataUrl: string, file: File) => {
       onImageUpload(dataUrl, file)
-      reset() // Clear the hook state after successful upload
-    }
-  }, [dataUrl, file, onImageUpload, reset])
-
-  // Handle errors
-  useEffect(() => {
-    if (error) {
+    },
+    onError: (error: string) => {
       onError?.(error)
-      reset() // Clear error after handling
     }
-  }, [error, onError, reset])
+  }), [onImageUpload, onError])
+
+  const { readFile, isLoading } = useFileReader(fileReaderOptions)
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {

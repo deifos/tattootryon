@@ -108,15 +108,10 @@ export function TattooTryOnClient() {
   // Gallery functions
   const handleReuseImage = useCallback((item: GalleryItem) => {
     if (item.type === 'base' || item.type === 'result') {
-      // First clear the base image to force a re-render, then set the new one
-      setBaseImage(null)
-      // Use setTimeout to ensure the state change is processed
-      setTimeout(() => {
-        setBaseImage(item.imageUrl)
-        if (item.bodyPart) {
-          setBodyPart(item.bodyPart)
-        }
-      }, 10)
+      setBaseImage(item.imageUrl)
+      if (item.bodyPart) {
+        setBodyPart(item.bodyPart)
+      }
     } else if (item.type === 'tattoo') {
       setTattooImage(item.imageUrl)
     }

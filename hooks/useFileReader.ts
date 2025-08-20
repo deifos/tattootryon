@@ -5,6 +5,8 @@ interface FileValidationOptions {
   allowedTypes?: string[]
   maxWidth?: number
   maxHeight?: number
+  onSuccess?: (dataUrl: string, file: File) => void
+  onError?: (error: string) => void
 }
 
 interface FileReadResult {
@@ -71,6 +73,11 @@ export function useFileReader(options: FileValidationOptions = {}) {
           error: fileError,
           isLoading: false,
         })
+        
+        // Call error callback if provided
+        if (config.onError) {
+          config.onError(fileError)
+        }
         return
       }
 
@@ -102,6 +109,11 @@ export function useFileReader(options: FileValidationOptions = {}) {
             error: dimensionError,
             isLoading: false,
           })
+          
+          // Call error callback if provided
+          if (config.onError) {
+            config.onError(dimensionError)
+          }
           return
         }
       }
@@ -112,13 +124,24 @@ export function useFileReader(options: FileValidationOptions = {}) {
         error: null,
         isLoading: false,
       })
+
+      // Call success callback if provided
+      if (config.onSuccess) {
+        config.onSuccess(dataUrl, file)
+      }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process file'
       setResult({
         dataUrl: null,
         file: null,
-        error: error instanceof Error ? error.message : 'Failed to process file',
+        error: errorMessage,
         isLoading: false,
       })
+      
+      // Call error callback if provided
+      if (config.onError) {
+        config.onError(errorMessage)
+      }
     }
   }, [validateFile, validateImageDimensions])
 

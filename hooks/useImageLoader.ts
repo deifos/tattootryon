@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useCallback, useMemo } from "react"
 
 interface ImageLoadResult {
   imageObj: HTMLImageElement | null
@@ -6,53 +6,55 @@ interface ImageLoadResult {
   error: string | null
 }
 
-export function useImageLoader(src: string | null) {
+interface UseImageLoaderOptions {
+  onError?: (error: string) => void
+}
+
+// Helper function to load image with promise
+const loadImagePromise = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+export function useImageLoader(options: UseImageLoaderOptions = {}) {
   const [result, setResult] = useState<ImageLoadResult>({
     imageObj: null,
     isLoading: false,
     error: null,
   })
 
-  useEffect(() => {
+  const loadImage = useCallback(async (src: string | null) => {
     if (!src) {
-      setResult({
-        imageObj: null,
-        isLoading: false,
-        error: null,
-      })
-      return
+      setResult({ imageObj: null, isLoading: false, error: null })
+      return null
     }
 
     setResult(prev => ({ ...prev, isLoading: true, error: null }))
 
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-
-    const handleLoad = () => {
-      setResult({
-        imageObj: img,
-        isLoading: false,
-        error: null,
-      })
+    try {
+      const img = await loadImagePromise(src)
+      setResult({ imageObj: img, isLoading: false, error: null })
+      return img
+    } catch (error) {
+      const errorMessage = "Failed to load image"
+      setResult({ imageObj: null, isLoading: false, error: errorMessage })
+      options.onError?.(errorMessage)
+      return null
     }
+  }, [options.onError])
 
-    const handleError = () => {
-      setResult({
-        imageObj: null,
-        isLoading: false,
-        error: 'Failed to load image',
-      })
-    }
+  const clearImage = useCallback(() => {
+    setResult({ imageObj: null, isLoading: false, error: null })
+  }, [])
 
-    img.addEventListener('load', handleLoad)
-    img.addEventListener('error', handleError)
-    img.src = src
-
-    return () => {
-      img.removeEventListener('load', handleLoad)
-      img.removeEventListener('error', handleError)
-    }
-  }, [src])
-
-  return result
+  return {
+    ...result,
+    loadImage,
+    clearImage,
+  }
 }
