@@ -33,48 +33,60 @@ class GalleryStorage {
     }
   }
 
-  private generateThumbnail(imageUrl: string): Promise<string> {
+  /**
+   * Generate optimized thumbnail for gallery display
+   * - For external URLs: use original (already optimized)
+   * - For data URLs: create smaller version to save localStorage space
+   */
+  private async generateThumbnail(imageUrl: string): Promise<string> {
+    // Skip thumbnail generation for external URLs - they're already optimized
+    if (imageUrl.startsWith('http')) {
+      return imageUrl
+    }
+
+    // Only generate thumbnails for data URLs (user uploads)
+    return this.createThumbnailFromDataUrl(imageUrl)
+  }
+
+  private createThumbnailFromDataUrl(dataUrl: string): Promise<string> {
     return new Promise((resolve) => {
-      // For data URLs or external URLs, try to generate thumbnail
       const img = new Image()
       
-      // Handle CORS for external URLs
-      if (imageUrl.startsWith('http')) {
-        img.crossOrigin = 'anonymous'
-      }
-      
       img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
-          
-          // Create thumbnail (150x150)
-          canvas.width = 150
-          canvas.height = 150
-          
-          if (ctx) {
-            // Calculate dimensions to maintain aspect ratio
-            const size = Math.min(img.width, img.height)
-            const offsetX = (img.width - size) / 2
-            const offsetY = (img.height - size) / 2
-            
-            ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, 150, 150)
-            resolve(canvas.toDataURL('image/jpeg', 0.8))
-          } else {
-            resolve(imageUrl) // Fallback to original if canvas fails
-          }
-        } catch (error) {
-          console.warn('Failed to generate thumbnail:', error)
-          resolve(imageUrl) // Fallback to original
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          resolve(dataUrl)
+          return
         }
+
+        // Simple 150x150 thumbnail with aspect ratio preserved
+        const size = 150
+        canvas.width = size
+        canvas.height = size
+        
+        // Calculate scale to fit image in square
+        const scale = Math.min(size / img.width, size / img.height)
+        const scaledWidth = img.width * scale
+        const scaledHeight = img.height * scale
+        
+        // Center image in canvas
+        const x = (size - scaledWidth) / 2
+        const y = (size - scaledHeight) / 2
+        
+        // White background for non-square images
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, size, size)
+        
+        // Draw scaled image
+        ctx.drawImage(img, x, y, scaledWidth, scaledHeight)
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
       }
       
-      img.onerror = (error) => {
-        console.warn('Failed to load image for thumbnail:', error)
-        resolve(imageUrl) // Fallback to original
-      }
-      
-      img.src = imageUrl
+      img.onerror = () => resolve(dataUrl)
+      img.src = dataUrl
     })
   }
 
@@ -95,18 +107,8 @@ class GalleryStorage {
       return existingItem
     }
     
-    // For external URLs, use original URL as thumbnail to avoid CORS issues
-    // For data URLs, try to generate thumbnail
-    let thumbnail = imageUrl
-    
-    if (imageUrl.startsWith('data:')) {
-      try {
-        thumbnail = await this.generateThumbnail(imageUrl)
-      } catch (error) {
-        console.warn('Failed to generate thumbnail, using original:', error)
-        thumbnail = imageUrl
-      }
-    }
+    // Generate optimized thumbnail (handles both external URLs and data URLs)
+    const thumbnail = await this.generateThumbnail(imageUrl)
     
     const newItem: GalleryItem = {
       id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
