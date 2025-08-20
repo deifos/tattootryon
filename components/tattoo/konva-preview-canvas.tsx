@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Konva from "konva"
 import { useCanvasComposer } from "@/hooks/useCanvasComposer"
 import { useFalAI } from "@/hooks/useFalAI"
@@ -15,6 +14,7 @@ import { GeneratedImageView } from "./generated-image-view"
 import { LoadingView } from "./loading-view"
 import { KonvaStage } from "./konva-stage"
 import { EmptyState } from "./empty-state"
+import { Card, CardBody, CardHeader } from "@heroui/card"
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null
@@ -253,9 +253,9 @@ export function KonvaPreviewCanvas({
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Preview Canvas</CardTitle>
+        Preview Canvas
       </CardHeader>
-      <CardContent>
+      <CardBody>
         <div 
           ref={containerRef}
           className="w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
@@ -312,7 +312,7 @@ export function KonvaPreviewCanvas({
             onDownloadResult={downloadGeneratedImage}
           />
         </div>
-      </CardContent>
+      </CardBody>
     </Card>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@heroui/button"
 import { Zap, RotateCcw, Download, Loader2 } from "lucide-react"
 
 interface CanvasControlButtonsProps {
@@ -29,7 +29,7 @@ export function CanvasControlButtons({
   return (
     <div className="flex gap-2">
       {(baseImage || generatedImage) && tattooImage && (
-        <Button onClick={onApplyTattoo} disabled={isApplying || isGenerating}>
+        <Button onPress={onApplyTattoo} disabled={isApplying || isGenerating}>
           {isApplying || isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -43,16 +43,16 @@ export function CanvasControlButtons({
           )}
         </Button>
       )}
-      <Button variant="outline" size="sm" onClick={onReset}>
+      <Button variant="bordered" size="sm" onPress={onReset}>
         <RotateCcw className="w-4 h-4 mr-2" />
         Reset
       </Button>
-      <Button variant="outline" size="sm" onClick={onExportCanvas}>
+      <Button variant="bordered" size="sm" onPress={onExportCanvas}>
         <Download className="w-4 h-4 mr-2" />
         Export Canvas
       </Button>
       {generatedImage && (
-        <Button variant="default" size="sm" onClick={onDownloadResult}>
+        <Button variant="solid" size="sm" onPress={onDownloadResult}>
           <Download className="w-4 h-4 mr-2" />
           Download Result
         </Button>

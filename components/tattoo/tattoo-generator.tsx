@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useRef, useMemo, useCallback, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@heroui/button"
+import { Card, CardBody } from "@heroui/card"
+import {Textarea} from "@heroui/react";
+import { Tabs, Tab } from "@heroui/tabs"
 import { Wand2, Crown, Skull, Heart, Star, Palette, Type, Brush, Upload, X, Loader2 } from "lucide-react"
 import { useFileReader } from "@/hooks/useFileReader"
 import { FalAIService } from "@/services/fal-ai"
@@ -79,6 +78,7 @@ export function TattooGenerator({
   const [prompt, setPrompt] = useState("")
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedTab, setSelectedTab] = useState("upload")
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { dataUrl, file, error, isLoading, readFile, reset } = useFileReader()
@@ -127,8 +127,7 @@ export function TattooGenerator({
     }
   }, [readFile, disabled, isLoading])
 
-  const handleRemove = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent triggering the upload click
+  const handleRemove = useCallback(() => {
     onTattooImageRemove?.()
   }, [onTattooImageRemove])
 
@@ -176,22 +175,16 @@ export function TattooGenerator({
     } finally {
       setIsGenerating(false)
     }
-  }, [prompt, selectedStyle, disabled, isGenerating, onTattooImageChange, onError])
+  }, [prompt, selectedStyle, disabled, isGenerating, onTattooImageChange, onError, memoizedTattooStyles])
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Tattoo Design</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload">Upload</TabsTrigger>
-            <TabsTrigger value="generate">Generate</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="upload" className="space-y-4">
-            <div
+    <div className="w-full">
+      <h3 className="text-lg font-semibold mb-4">Tattoo Design</h3>
+      <Tabs aria-label="Tattoo options" selectedKey={selectedTab} onSelectionChange={(key) => setSelectedTab(key as string)}>
+        <Tab key="upload" title="Upload">
+          <Card>
+            <CardBody>
+              <div
               className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors min-h-[200px] flex items-center justify-center ${
                 disabled || isLoading
                   ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
@@ -215,11 +208,13 @@ export function TattooGenerator({
                   />
                   {onTattooImageRemove && !disabled && (
                     <Button
-                      variant="destructive"
+                      color="danger"
+                      variant="solid"
                       size="sm"
-                      className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={handleRemove}
+                      className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity min-w-6"
+                      onPress={handleRemove}
                       title="Remove tattoo image"
+                      isIconOnly
                     >
                       <X className="w-3 h-3" />
                     </Button>
@@ -247,32 +242,38 @@ export function TattooGenerator({
               onChange={handleFileChange}
               disabled={disabled || isLoading}
             />
-          </TabsContent>
+            </CardBody>
+          </Card>
+        </Tab>
 
-          <TabsContent value="generate" className="space-y-4">
+        <Tab key="generate" title="Generate">
+          <Card shadow="sm">
+            <CardBody className="space-y-4">
             <div>
-              <Label htmlFor="prompt">Describe your tattoo</Label>
               <Textarea
                 id="prompt"
+                label="Describe your tattoo"
                 placeholder="e.g., A fierce dragon with intricate scales, breathing fire..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="mt-1"
                 disabled={disabled || isGenerating}
+                // variant="bordered"
+                minRows={3}
+                maxRows={6}
               />
             </div>
 
             <div>
-              <Label>Tattoo Styles</Label>
+              <label className="text-sm font-medium">Tattoo Styles</label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {memoizedTattooStyles.map((style) => {
                   const Icon = style.icon
                   return (
                     <Button
                       key={style.name}
-                      variant={selectedStyle === style.name ? "default" : "outline"}
+                      variant={selectedStyle === style.name ? "solid" : "bordered"}
                       size="sm"
-                      onClick={() => setSelectedStyle(style.name)}
+                      onPress={() => setSelectedStyle(style.name)}
                       className="justify-start"
                       disabled={disabled || isGenerating}
                     >
@@ -284,7 +285,7 @@ export function TattooGenerator({
               </div>
             </div>
 
-            <Button onClick={generateTattooDesign} disabled={!prompt.trim() || isGenerating || disabled} className="w-full">
+            <Button onPress={generateTattooDesign} disabled={!prompt.trim() || isGenerating || disabled} className="w-full">
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -297,9 +298,10 @@ export function TattooGenerator({
                 </>
               )}
             </Button>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </CardBody>
+          </Card>
+        </Tab>
+      </Tabs>
+    </div>
   )
 }

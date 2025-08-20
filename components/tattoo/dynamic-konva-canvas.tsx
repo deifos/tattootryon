@@ -1,9 +1,9 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import {Button, } from "@heroui/button";
 import { RotateCcw, Download, Loader2 } from "lucide-react"
+import { Card, CardBody, CardHeader } from "@heroui/card";
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null
@@ -24,28 +24,28 @@ const KonvaCanvas = dynamic(
     loading: () => (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <span>Preview Canvas</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button size="sm" disabled>
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
-              <Button variant="outline" size="sm" disabled>
+              <Button  size="sm" disabled>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
             </div>
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           <div className="flex items-center justify-center w-full bg-gray-100 rounded-lg" style={{ minHeight: '500px' }}>
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
               <p className="text-gray-500">Loading canvas...</p>
             </div>
           </div>
-        </CardContent>
+        </CardBody>
       </Card>
     )
   }

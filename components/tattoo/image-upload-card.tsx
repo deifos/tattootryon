@@ -1,12 +1,11 @@
 "use client"
 
 import { useRef, useCallback, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { Upload, X, Loader2 } from "lucide-react"
 import { useFileReader } from "@/hooks/useFileReader"
+import { Card, CardBody, CardHeader } from "@heroui/card"
+import { Button } from "@heroui/button"
+import { Textarea } from "@heroui/input"
 
 interface ImageUploadCardProps {
   title: string
@@ -91,14 +90,14 @@ export function ImageUploadCard({
   }, [onImageRemove])
 
   return (
-    <Card>
+    <Card className="border-none shadow-md">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardHeader className="flex items-center gap-2">
           <Icon className="w-5 h-5" />
           {title}
-        </CardTitle>
+        </CardHeader>
       </CardHeader>
-      <CardContent>
+      <CardBody>
         <div
           className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors min-h-[200px] flex items-center justify-center ${
             disabled || isLoading
@@ -123,7 +122,6 @@ export function ImageUploadCard({
               />
               {onImageRemove && !disabled && (
                 <Button
-                  variant="destructive"
                   size="sm"
                   className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={handleRemove}
@@ -159,9 +157,9 @@ export function ImageUploadCard({
         {/* Body part input */}
         {showBodyPartInput && image && (
           <div className="mt-4 space-y-2">
-            <Label htmlFor="body-part" className="text-sm font-medium">
+            {/* <Label htmlFor="body-part" className="text-sm font-medium">
               Body Part (for better results)
-            </Label>
+            </Label> */}
             <Textarea
               id="body-part"
               placeholder={bodyPartPlaceholder}
@@ -176,7 +174,7 @@ export function ImageUploadCard({
             </p>
           </div>
         )}
-      </CardContent>
+      </CardBody>
     </Card>
   )
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@heroui/button"
+import { Card, CardBody, CardHeader } from "@heroui/card"
+import { Tabs, Tab } from "@heroui/tabs"
 import { Image as ImageIcon, Trash2 } from "lucide-react"
 import { type GalleryItem } from "@/lib/gallery-storage"
 
@@ -19,127 +19,158 @@ export function GallerySection({
   onDeleteFromGallery,
   onClearGallery,
 }: GallerySectionProps) {
+  const tabs = [
+    {
+      id: "all",
+      type: "all" as const,
+      label: `All (${galleryItems.length})`,
+    },
+    {
+      id: "base",
+      type: "base" as const,
+      label: `Base Images (${galleryItems.filter(i => i.type === 'base').length})`,
+    },
+    {
+      id: "tattoo", 
+      type: "tattoo" as const,
+      label: `Tattoos (${galleryItems.filter(i => i.type === 'tattoo').length})`,
+    },
+    {
+      id: "result",
+      type: "result" as const, 
+      label: `Results (${galleryItems.filter(i => i.type === 'result').length})`,
+    },
+  ]
+
   return (
     <div className="mt-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Gallery
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onClearGallery()}
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Clear All
-              </Button>
-            </div>
-          </CardTitle>
+      <Card className="border-none shadow-sm">
+        <CardHeader className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ImageIcon className="w-5 h-5" />
+            <h3 className="text-lg font-semibold">Gallery</h3>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="bordered" 
+              size="sm"
+              onPress={() => onClearGallery()}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Clear All
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All ({galleryItems.length})</TabsTrigger>
-              <TabsTrigger value="base">Base Images ({galleryItems.filter(i => i.type === 'base').length})</TabsTrigger>
-              <TabsTrigger value="tattoo">Tattoos ({galleryItems.filter(i => i.type === 'tattoo').length})</TabsTrigger>
-              <TabsTrigger value="result">Results ({galleryItems.filter(i => i.type === 'result').length})</TabsTrigger>
-            </TabsList>
+        <CardBody>
+          <Tabs aria-label="Gallery tabs" items={tabs}>
+            {(item) => (
+              <Tab key={item.id} title={item.label}>
+                <Card shadow="sm">
+                  <CardBody>
 
-            <TabsContent value="all" className="mt-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {galleryItems.map((item) => (
-                  <GalleryItem 
-                    key={item.id} 
-                    item={item} 
-                    onReuse={onReuseImage} 
-                    onDelete={onDeleteFromGallery}
-                    typeLabel={`${item.type} image`}
-                  />
-                ))}
-              </div>
-              {galleryItems.length === 0 && (
-                <EmptyGalleryMessage />
-              )}
-            </TabsContent>
+                    {item.type === 'all' && (
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                          {galleryItems.map((item) => (
+                            <GalleryItem 
+                              key={item.id} 
+                              item={item} 
+                              onReuse={onReuseImage} 
+                              onDelete={onDeleteFromGallery}
+                              typeLabel={`${item.type} image`}
+                            />
+                          ))}
+                        </div>
+                        {galleryItems.length === 0 && (
+                          <EmptyGalleryMessage />
+                        )}
+                      </>
+                    )}
 
-            <TabsContent value="base" className="mt-4">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-gray-600">Base images you&apos;ve uploaded</p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onClearGallery('base')}
-                >
-                  Clear Base Images
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {galleryItems.filter(item => item.type === 'base').map((item) => (
-                  <GalleryItem 
-                    key={item.id} 
-                    item={item} 
-                    onReuse={onReuseImage} 
-                    onDelete={onDeleteFromGallery}
-                    typeLabel="Base image"
-                  />
-                ))}
-              </div>
-            </TabsContent>
+                    {item.type === 'base' && (
+                      <>
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm text-gray-600">Base images you&apos;ve uploaded</p>
+                          <Button 
+                            variant="bordered" 
+                            size="sm"
+                            onPress={() => onClearGallery('base')}
+                          >
+                            Clear Base Images
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                          {galleryItems.filter(item => item.type === 'base').map((item) => (
+                            <GalleryItem 
+                              key={item.id} 
+                              item={item} 
+                              onReuse={onReuseImage} 
+                              onDelete={onDeleteFromGallery}
+                              typeLabel="Base image"
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
 
-            <TabsContent value="tattoo" className="mt-4">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-gray-600">Tattoo designs you&apos;ve uploaded or generated</p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onClearGallery('tattoo')}
-                >
-                  Clear Tattoos
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {galleryItems.filter(item => item.type === 'tattoo').map((item) => (
-                  <GalleryItem 
-                    key={item.id} 
-                    item={item} 
-                    onReuse={onReuseImage} 
-                    onDelete={onDeleteFromGallery}
-                    typeLabel="Tattoo design"
-                  />
-                ))}
-              </div>
-            </TabsContent>
+                    {item.type === 'tattoo' && (
+                      <>
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm text-gray-600">Tattoo designs you&apos;ve uploaded or generated</p>
+                          <Button 
+                            variant="bordered" 
+                            size="sm"
+                            onPress={() => onClearGallery('tattoo')}
+                          >
+                            Clear Tattoos
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                          {galleryItems.filter(item => item.type === 'tattoo').map((item) => (
+                            <GalleryItem 
+                              key={item.id} 
+                              item={item} 
+                              onReuse={onReuseImage} 
+                              onDelete={onDeleteFromGallery}
+                              typeLabel="Tattoo design"
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
 
-            <TabsContent value="result" className="mt-4">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-gray-600">Generated tattoo results</p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onClearGallery('result')}
-                >
-                  Clear Results
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {galleryItems.filter(item => item.type === 'result').map((item) => (
-                  <GalleryItem 
-                    key={item.id} 
-                    item={item} 
-                    onReuse={onReuseImage} 
-                    onDelete={onDeleteFromGallery}
-                    typeLabel="Generated Result"
-                    actionLabel="Use as Base"
-                  />
-                ))}
-              </div>
-            </TabsContent>
+                    {item.type === 'result' && (
+                      <>
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm text-gray-600">Generated tattoo results</p>
+                          <Button 
+                            variant="bordered" 
+                            size="sm"
+                            onPress={() => onClearGallery('result')}
+                          >
+                            Clear Results
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                          {galleryItems.filter(item => item.type === 'result').map((item) => (
+                            <GalleryItem 
+                              key={item.id} 
+                              item={item} 
+                              onReuse={onReuseImage} 
+                              onDelete={onDeleteFromGallery}
+                              typeLabel="Generated Result"
+                              actionLabel="Use as Base"
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </CardBody>
+                </Card>
+              </Tab>
+            )}
           </Tabs>
-        </CardContent>
+        </CardBody>
       </Card>
     </div>
   )
@@ -182,15 +213,15 @@ function GalleryItem({ item, onReuse, onDelete, typeLabel, actionLabel = "Use" }
       <div className="flex gap-1">
         <Button
           size="sm"
-          onClick={() => onReuse(item)}
+          onPress={() => onReuse(item)}
           className="flex-1 text-xs"
         >
           {actionLabel}
         </Button>
         <Button
-          variant="destructive"
+          color="danger"
           size="sm"
-          onClick={() => onDelete(item.id, item.name || typeLabel)}
+          onPress={() => onDelete(item.id, item.name || typeLabel)}
           className="px-2"
         >
           <Trash2 className="w-3 h-3" />

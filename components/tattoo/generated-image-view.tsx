@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@heroui/button"
 
 interface GeneratedImageViewProps {
   generatedImage: string
@@ -16,10 +16,9 @@ export function GeneratedImageView({ generatedImage, onBackToEditor }: Generated
         className="max-w-full max-h-full object-contain rounded"
       />
       <Button
-        variant="outline"
         size="sm"
         className="absolute top-2 right-2"
-        onClick={onBackToEditor}
+        onPress={onBackToEditor}
         title="Back to editor"
       >
         Edit

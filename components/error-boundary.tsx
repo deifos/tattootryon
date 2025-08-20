@@ -1,9 +1,9 @@
 "use client"
 
 import React, { Component, ReactNode } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { AlertTriangle, RefreshCw } from "lucide-react"
+import { Card, CardBody, CardHeader } from "@heroui/card"
+import { Button } from "@heroui/button"
 
 interface Props {
   children: ReactNode
@@ -44,12 +44,12 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
+            <CardHeader className="flex items-center gap-2 text-red-700">
               <AlertTriangle className="w-5 h-5" />
               Something went wrong
-            </CardTitle>
+            </CardHeader>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardBody className="space-y-4">
             <p className="text-red-600">
               An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.
             </p>
@@ -61,11 +61,11 @@ export class ErrorBoundary extends Component<Props, State> {
                 </pre>
               </details>
             )}
-            <Button onClick={this.handleReset} variant="outline" className="gap-2">
+            <Button onClick={this.handleReset} className="gap-2">
               <RefreshCw className="w-4 h-4" />
               Try Again
             </Button>
-          </CardContent>
+          </CardBody>
         </Card>
       )
     }

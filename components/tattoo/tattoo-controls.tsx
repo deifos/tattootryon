@@ -1,7 +1,6 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
+import { Slider } from "@heroui/slider"
 
 interface TattooControlsProps {
   tattooSize: number[]
@@ -20,23 +19,23 @@ export function TattooControls({
     <div className="mt-4 p-4 bg-gray-50 rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium">Size: {tattooSize[0]}%</Label>
+          <div className="text-sm font-medium">Size: {tattooSize[0]}%</div>
           <Slider
             value={tattooSize}
-            onValueChange={onSizeChange}
-            max={200}
-            min={10}
+            onChange={(value) => onSizeChange(Array.isArray(value) ? value : [value])}
+            maxValue={200}
+            minValue={10}
             step={5}
             className="mt-2"
           />
         </div>
         <div>
-          <Label className="text-sm font-medium">Rotation: {tattooRotation[0]}°</Label>
+          <span className="text-sm font-medium">Rotation: {tattooRotation[0]}°</span>
           <Slider
             value={tattooRotation}
-            onValueChange={onRotationChange}
-            max={360}
-            min={0}
+            onChange={(value) => onRotationChange(Array.isArray(value) ? value : [value])}
+            maxValue={360}
+            minValue={0}
             step={5}
             className="mt-2"
           />

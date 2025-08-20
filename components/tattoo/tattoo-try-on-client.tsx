@@ -6,11 +6,11 @@ import { TattooGenerator } from "./tattoo-generator"
 import { PreviewCanvas } from "./preview-canvas"
 import { ErrorBoundary } from "../error-boundary"
 import { Upload, AlertCircle, X } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button } from "@heroui/button"
 import { galleryStorage, type GalleryItem } from "@/lib/gallery-storage"
 import { DeleteConfirmationDialog, type DeleteConfirmationState } from "./delete-confirmation-dialog"
 import { GallerySection } from "./gallery-section"
+import { Card, CardBody } from "@heroui/card"
 
 interface ErrorState {
   message: string
@@ -170,7 +170,7 @@ export function TattooTryOnClient() {
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {errors.map((error) => (
             <Card key={error.timestamp} className="border-red-200 bg-red-50 shadow-lg">
-              <CardContent className="p-3">
+              <CardBody className="p-3">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
                   <p className="text-sm text-red-700 flex-1">{error.message}</p>
@@ -183,7 +183,7 @@ export function TattooTryOnClient() {
                     <X className="w-3 h-3" />
                   </Button>
                 </div>
-              </CardContent>
+              </CardBody>
             </Card>
           ))}
         </div>
@@ -222,7 +222,7 @@ export function TattooTryOnClient() {
         </div>
 
         {/* Center Panel - Canvas */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 ">
           <ErrorBoundary>
             <PreviewCanvas
               baseImage={baseImage}
