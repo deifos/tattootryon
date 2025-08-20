@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RotateCcw, Download } from "lucide-react"
+import { RotateCcw, Download, Loader2 } from "lucide-react"
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null
@@ -12,6 +12,8 @@ interface KonvaPreviewCanvasProps {
   onApplyTattoo: () => void
   isApplying: boolean
   onError?: (error: string) => void
+  onGeneratedResult?: (imageUrl: string) => void
+  onTattooRemove?: () => void
 }
 
 // Dynamically import the Konva component with no SSR
@@ -39,7 +41,7 @@ const KonvaCanvas = dynamic(
         <CardContent>
           <div className="flex items-center justify-center w-full bg-gray-100 rounded-lg" style={{ minHeight: '500px' }}>
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
               <p className="text-gray-500">Loading canvas...</p>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { ImageUploadCard } from "./image-upload-card"
 import { TattooGenerator } from "./tattoo-generator"
 import { PreviewCanvas } from "./preview-canvas"
@@ -8,6 +8,9 @@ import { ErrorBoundary } from "../error-boundary"
 import { Upload, AlertCircle, X } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { galleryStorage, type GalleryItem } from "@/lib/gallery-storage"
+import { DeleteConfirmationDialog, type DeleteConfirmationState } from "./delete-confirmation-dialog"
+import { GallerySection } from "./gallery-section"
 
 interface ErrorState {
   message: string
@@ -20,6 +23,18 @@ export function TattooTryOnClient() {
   const [bodyPart, setBodyPart] = useState<string>("")
   const [isApplying, setIsApplying] = useState(false)
   const [errors, setErrors] = useState<ErrorState[]>([])
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([])
+  
+  // Confirmation dialog state
+  const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmationState>({
+    isOpen: false,
+    type: 'item'
+  })
+
+  // Load gallery items on mount
+  useEffect(() => {
+    setGalleryItems(galleryStorage.getAllItems())
+  }, [])
 
   const addError = useCallback((message: string) => {
     const error: ErrorState = {
@@ -38,12 +53,28 @@ export function TattooTryOnClient() {
     setErrors(prev => prev.filter(e => e.timestamp !== timestamp))
   }, [])
 
-  const handleBaseImageUpload = useCallback((dataUrl: string) => {
+  const handleBaseImageUpload = useCallback(async (dataUrl: string, file: File) => {
     setBaseImage(dataUrl)
-  }, [])
+    
+    // Save to gallery
+    try {
+      await galleryStorage.addItem('base', dataUrl, file.name, bodyPart)
+      setGalleryItems(galleryStorage.getAllItems())
+    } catch (error) {
+      console.warn('Failed to save base image to gallery:', error)
+    }
+  }, [bodyPart])
 
-  const handleTattooImageChange = useCallback((dataUrl: string) => {
+  const handleTattooImageChange = useCallback(async (dataUrl: string, file: File) => {
     setTattooImage(dataUrl)
+    
+    // Save to gallery
+    try {
+      await galleryStorage.addItem('tattoo', dataUrl, file.name)
+      setGalleryItems(galleryStorage.getAllItems())
+    } catch (error) {
+      console.warn('Failed to save tattoo image to gallery:', error)
+    }
   }, [])
 
   const handleBaseImageRemove = useCallback(() => {
@@ -73,6 +104,69 @@ export function TattooTryOnClient() {
       setIsApplying(false)
     }
   }
+
+  // Gallery functions
+  const handleReuseImage = useCallback((item: GalleryItem) => {
+    if (item.type === 'base' || item.type === 'result') {
+      // First clear the base image to force a re-render, then set the new one
+      setBaseImage(null)
+      // Use setTimeout to ensure the state change is processed
+      setTimeout(() => {
+        setBaseImage(item.imageUrl)
+        if (item.bodyPart) {
+          setBodyPart(item.bodyPart)
+        }
+      }, 10)
+    } else if (item.type === 'tattoo') {
+      setTattooImage(item.imageUrl)
+    }
+  }, [])
+
+  const handleDeleteFromGallery = useCallback((id: string, itemName?: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      type: 'item',
+      itemId: id,
+      itemName
+    })
+  }, [])
+
+  const handleClearGallery = useCallback((type?: GalleryItem['type']) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      type: 'bulk',
+      bulkType: type
+    })
+  }, [])
+
+  const confirmDelete = useCallback(() => {
+    if (deleteConfirmation.type === 'item' && deleteConfirmation.itemId) {
+      galleryStorage.removeItem(deleteConfirmation.itemId)
+      setGalleryItems(galleryStorage.getAllItems())
+    } else if (deleteConfirmation.type === 'bulk') {
+      if (deleteConfirmation.bulkType) {
+        galleryStorage.clearByType(deleteConfirmation.bulkType)
+      } else {
+        galleryStorage.clearAll()
+      }
+      setGalleryItems(galleryStorage.getAllItems())
+    }
+    setDeleteConfirmation({ isOpen: false, type: 'item' })
+  }, [deleteConfirmation])
+
+  const cancelDelete = useCallback(() => {
+    setDeleteConfirmation({ isOpen: false, type: 'item' })
+  }, [])
+
+  // Handle generated result from preview canvas
+  const handleGeneratedResult = useCallback(async (imageUrl: string) => {
+    try {
+      await galleryStorage.addItem('result', imageUrl, 'Generated Result', bodyPart)
+      setGalleryItems(galleryStorage.getAllItems())
+    } catch (error) {
+      console.warn('Failed to save generated result to gallery:', error)
+    }
+  }, [bodyPart])
 
   return (
     <>
@@ -142,10 +236,27 @@ export function TattooTryOnClient() {
               onApplyTattoo={applyTattooToBase}
               isApplying={isApplying}
               onError={addError}
+              onGeneratedResult={handleGeneratedResult}
+              onTattooRemove={handleTattooImageRemove}
             />
           </ErrorBoundary>
         </div>
       </div>
+
+      {/* Gallery Section */}
+      <GallerySection
+        galleryItems={galleryItems}
+        onReuseImage={handleReuseImage}
+        onDeleteFromGallery={handleDeleteFromGallery}
+        onClearGallery={handleClearGallery}
+      />
+
+      {/* Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        deleteConfirmation={deleteConfirmation}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </>
   )
 }

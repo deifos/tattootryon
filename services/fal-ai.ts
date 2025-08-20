@@ -97,7 +97,7 @@ export class FalAIService {
 
   static async generateTattoo(request: FalAIRequest): Promise<FalAIResponse> {
     try {
-      const loras = request.loraUrl ? [{ path: request.loraUrl, scale: 1 }] : [{ path: TATTOO_LORA_URL, scale: 1 }]
+      const loras = request.loraUrl ? [{ path: request.loraUrl, scale: 1 }] : [{ path: TATTOO_LORA_URL, scale: 0.5 }]
       console.log(request)
       
       const result = await fal.subscribe("fal-ai/flux-kontext-lora", {
@@ -108,9 +108,10 @@ export class FalAIService {
           num_inference_steps: request.num_inference_steps || 30,
           guidance_scale: request.guidance_scale || 2.5,
           num_images: request.num_images || 1,
-          enable_safety_checker: request.enable_safety_checker ?? true,
+          enable_safety_checker: false,
           resolution_mode: request.resolution_mode || "match_input",
           seed: request.seed,
+
         },
         logs: true,
         onQueueUpdate: (update) => {

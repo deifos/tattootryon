@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Upload, X } from "lucide-react"
+import { Upload, X, Loader2 } from "lucide-react"
 import { useFileReader } from "@/hooks/useFileReader"
 
 interface ImageUploadCardProps {
@@ -119,7 +119,7 @@ export function ImageUploadCard({
         >
           {isLoading ? (
             <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+              <Loader2 className="w-8 h-8 animate-spin mb-2 text-primary" />
               <p className="text-sm text-gray-500">Processing image...</p>
             </div>
           ) : image ? (

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Zap, RotateCcw, Download } from "lucide-react"
+import { Zap, RotateCcw, Download, Loader2 } from "lucide-react"
 
 interface CanvasControlButtonsProps {
   baseImage: string | null
@@ -28,11 +28,11 @@ export function CanvasControlButtons({
 }: CanvasControlButtonsProps) {
   return (
     <div className="flex gap-2">
-      {baseImage && tattooImage && (
+      {(baseImage || generatedImage) && tattooImage && (
         <Button onClick={onApplyTattoo} disabled={isApplying || isGenerating}>
           {isApplying || isGenerating ? (
             <>
-              <Zap className="w-4 h-4 mr-2 animate-pulse" />
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Generating...
             </>
           ) : (

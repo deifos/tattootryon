@@ -1,8 +1,9 @@
 "use client"
 
-import { forwardRef } from "react"
+import { forwardRef, useState, useEffect } from "react"
 import { Stage, Layer, Image as KonvaImage, Transformer } from "react-konva"
 import Konva from "konva"
+import { Loader2 } from "lucide-react"
 
 interface KonvaStageProps {
   stageSize: { width: number; height: number }
@@ -15,6 +16,7 @@ interface KonvaStageProps {
   onTattooSelect: () => void
   transformerRef: React.RefObject<Konva.Transformer | null>
   tattooRef: React.RefObject<Konva.Image | null>
+  generatedImage?: string | null
 }
 
 export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
@@ -29,7 +31,26 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
     onTattooSelect,
     transformerRef,
     tattooRef,
+    generatedImage,
   }, stageRef) => {
+    const [generatedImageObj, setGeneratedImageObj] = useState<HTMLImageElement | null>(null)
+
+    // Load generated image when available
+    useEffect(() => {
+      if (generatedImage) {
+        const img = new window.Image()
+        img.crossOrigin = "anonymous"
+        img.onload = () => setGeneratedImageObj(img)
+        img.onerror = () => setGeneratedImageObj(null)
+        img.src = generatedImage
+      } else {
+        setGeneratedImageObj(null)
+      }
+    }, [generatedImage])
+
+    // Use generated image as base if available, otherwise use base image
+    const displayImageObj = generatedImageObj || baseImageObj
+
     return (
       <div className="relative">
         <Stage
@@ -39,10 +60,10 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
           ref={stageRef}
         >
           <Layer>
-            {/* Base Image */}
-            {baseImageObj && (
+            {/* Base Image (either original base or generated image) */}
+            {displayImageObj && (
               <KonvaImage
-                image={baseImageObj}
+                image={displayImageObj}
                 width={stageSize.width}
                 height={stageSize.height}
               />
@@ -93,7 +114,7 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
         {isGenerating && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
             <div className="bg-white rounded-lg p-6 flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+              <Loader2 className="w-8 h-8 animate-spin mb-3 text-primary" />
               <p className="text-sm font-medium text-gray-700">Generating tattoo...</p>
               <p className="text-xs text-gray-500 mt-1">This may take a few moments</p>
             </div>

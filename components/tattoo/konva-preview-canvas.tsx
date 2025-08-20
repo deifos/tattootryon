@@ -20,6 +20,8 @@ interface KonvaPreviewCanvasProps {
   onApplyTattoo: () => void
   isApplying: boolean
   onError?: (error: string) => void
+  onGeneratedResult?: (imageUrl: string) => void
+  onTattooRemove?: () => void
 }
 
 // Helper function to load image
@@ -79,6 +81,8 @@ export function KonvaPreviewCanvas({
   bodyPart,
   isApplying,
   onError,
+  onGeneratedResult,
+  onTattooRemove,
 }: KonvaPreviewCanvasProps) {
   // State
   const [baseImageObj, setBaseImageObj] = useState<HTMLImageElement | null>(null)
@@ -100,6 +104,9 @@ export function KonvaPreviewCanvas({
   const { generateTattoo, isGenerating } = useFalAI({
     onSuccess: (imageUrl) => {
       setGeneratedImage(imageUrl)
+      onGeneratedResult?.(imageUrl)
+      // Clear the tattoo from preview since it's now applied to the generated image
+      onTattooRemove?.()
     },
     onError: (error) => {
       onError?.(error)
@@ -118,7 +125,11 @@ export function KonvaPreviewCanvas({
   // Load base image
   useEffect(() => {
     if (baseImage) {
+      console.log('Loading new base image, clearing generated image:', baseImage.substring(0, 50))
+      // Clear generated image when a new base image is loaded
+      setGeneratedImage(null)
       setIsLoading(true)
+      
       loadImage(baseImage)
         .then((img) => {
           setBaseImageObj(img)
@@ -136,6 +147,7 @@ export function KonvaPreviewCanvas({
         })
     } else {
       setBaseImageObj(null)
+      setGeneratedImage(null) // Also clear generated image when base image is cleared
       setStageSize({ width: 800, height: 500 })
     }
   }, [baseImage, onError])
@@ -182,6 +194,23 @@ export function KonvaPreviewCanvas({
     }
   }, [baseImageObj])
 
+  // Handle keyboard events
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Delete key pressed and tattoo is selected
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId === 'tattoo' && onTattooRemove) {
+        e.preventDefault()
+        onTattooRemove()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedId, onTattooRemove])
+
   // Handle transformer attachment
   useEffect(() => {
     if (selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
@@ -204,7 +233,7 @@ export function KonvaPreviewCanvas({
 
   // Apply tattoo using AI
   const handleApplyTattoo = async () => {
-    if (!baseImage || !tattooImage) {
+    if ((!baseImage && !generatedImage) || !tattooImage) {
       onError?.("Please upload both a base image and a tattoo design")
       return
     }
@@ -217,6 +246,13 @@ export function KonvaPreviewCanvas({
 
       // Compose the canvas images into a single image
       const composition = await composeImages(stageRef as React.RefObject<Konva.Stage>)
+      
+      console.log('Canvas composition created:', {
+        hasBaseImage: !!baseImage,
+        hasGeneratedImage: !!generatedImage,
+        hasTattooImage: !!tattooImage,
+        compositionSize: composition.dataUrl.length
+      })
       
       // Generate the tattoo application using FAL AI
       const prompt = bodyPart ? `Apply this tattoo to the ${bodyPart}` : 'Apply this tattoo to the person'
@@ -297,20 +333,7 @@ export function KonvaPreviewCanvas({
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Preview Canvas</span>
-          <CanvasControlButtons
-            baseImage={baseImage}
-            tattooImage={tattooImage}
-            generatedImage={generatedImage}
-            isApplying={isApplying}
-            isGenerating={isGenerating}
-            onApplyTattoo={handleApplyTattoo}
-            onReset={resetCanvas}
-            onExportCanvas={exportImage}
-            onDownloadResult={downloadGeneratedImage}
-          />
-        </CardTitle>
+        <CardTitle>Preview Canvas</CardTitle>
       </CardHeader>
       <CardContent>
         <div 
@@ -320,12 +343,12 @@ export function KonvaPreviewCanvas({
         >
           {isLoading ? (
             <LoadingView />
-          ) : generatedImage ? (
+          ) : generatedImage && !tattooImage ? (
             <GeneratedImageView 
               generatedImage={generatedImage}
               onBackToEditor={handleBackToEditor}
             />
-          ) : baseImage ? (
+          ) : (baseImage || generatedImage) ? (
             <KonvaStage
               ref={stageRef}
               stageSize={stageSize}
@@ -338,19 +361,37 @@ export function KonvaPreviewCanvas({
               onTattooSelect={handleTattooSelect}
               transformerRef={transformerRef}
               tattooRef={tattooRef}
+              generatedImage={generatedImage}
             />
           ) : (
             <EmptyState />
           )}
         </div>
 
-        {baseImage && tattooImage && (
+        {(baseImage || generatedImage) && tattooImage && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-500">
-              Click on the tattoo to select it, then drag to move or use the handles to resize and rotate
+              Click on the tattoo to select it, then drag to move or use the handles to resize and rotate.
+              Press Delete or Backspace to remove the selected tattoo from preview.
+              {generatedImage && " You can add multiple tattoos to generated images."}
             </p>
           </div>
         )}
+
+        {/* Control Buttons */}
+        <div className="mt-4 flex justify-center">
+          <CanvasControlButtons
+            baseImage={baseImage}
+            tattooImage={tattooImage}
+            generatedImage={generatedImage}
+            isApplying={isApplying}
+            isGenerating={isGenerating}
+            onApplyTattoo={handleApplyTattoo}
+            onReset={resetCanvas}
+            onExportCanvas={exportImage}
+            onDownloadResult={downloadGeneratedImage}
+          />
+        </div>
       </CardContent>
     </Card>
   )
