@@ -12,20 +12,13 @@ export const maxDuration = 10;
 export async function POST(request: NextRequest) {
   console.log('🔍 Webhook endpoint hit');
   
-  // For testing, you can temporarily skip signature verification
-  const SKIP_SIGNATURE_VERIFICATION = process.env.NODE_ENV === 'development';
-  
-  if (!webhookSecret && !SKIP_SIGNATURE_VERIFICATION) {
+  if (!webhookSecret) {
     console.log('⚠️ Missing STRIPE_WEBHOOK_SECRET');
     return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 400 });
   }
 
-  if (SKIP_SIGNATURE_VERIFICATION) {
-    console.log('🚧 DEVELOPMENT MODE: Skipping signature verification');
-  } else {
-    console.log(`🔑 Webhook secret configured (length: ${webhookSecret.length})`);
-    console.log(`🔑 Webhook secret starts with: ${webhookSecret.substring(0, 10)}...`);
-  }
+  console.log(`🔑 Webhook secret configured (length: ${webhookSecret.length})`);
+  console.log(`🔑 Webhook secret starts with: ${webhookSecret.substring(0, 10)}...`);
 
   try {
     // Get the raw request body as text (this preserves exact formatting)
@@ -42,36 +35,25 @@ export async function POST(request: NextRequest) {
 
     let event: Stripe.Event;
 
-    if (SKIP_SIGNATURE_VERIFICATION) {
-      // Parse the JSON body directly without signature verification (development only)
-      try {
-        event = JSON.parse(body);
-        console.log('🚧 Using raw event data (no signature verification)');
-      } catch (parseErr) {
-        console.log('❌ Failed to parse webhook body as JSON');
-        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-      }
-    } else {
-      try {
-        // Use the text body directly - Stripe SDK can handle string bodies
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.log(`❌ Webhook signature verification failed: ${errorMessage}`);
-        
-        // Try with different webhook secret if we're testing with Stripe CLI
-        if (process.env.STRIPE_CLI_WEBHOOK_SECRET && webhookSecret !== process.env.STRIPE_CLI_WEBHOOK_SECRET) {
-          console.log('🔄 Trying with CLI webhook secret...');
-          try {
-            event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_CLI_WEBHOOK_SECRET);
-            console.log('✅ CLI webhook secret worked!');
-          } catch (cliErr) {
-            console.log('❌ CLI webhook secret also failed');
-            return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
-          }
-        } else {
+    try {
+      // Use the text body directly - Stripe SDK can handle string bodies
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.log(`❌ Webhook signature verification failed: ${errorMessage}`);
+      
+      // Try with different webhook secret if we're testing with Stripe CLI
+      if (process.env.STRIPE_CLI_WEBHOOK_SECRET && webhookSecret !== process.env.STRIPE_CLI_WEBHOOK_SECRET) {
+        console.log('🔄 Trying with CLI webhook secret...');
+        try {
+          event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_CLI_WEBHOOK_SECRET);
+          console.log('✅ CLI webhook secret worked!');
+        } catch (cliErr) {
+          console.log('❌ CLI webhook secret also failed', cliErr);
           return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
         }
+      } else {
+        return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
       }
     }
 

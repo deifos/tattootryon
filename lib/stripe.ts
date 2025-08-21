@@ -17,14 +17,14 @@ export const CURRENCY = 'usd';
 
 // Helper function to format amount for Stripe
 export function formatAmountForStripe(amount: number, currency: string): number {
-  let numberFormat = new Intl.NumberFormat(['en-US'], {
+  const numberFormat = new Intl.NumberFormat(['en-US'], {
     style: 'currency',
     currency: currency,
     currencyDisplay: 'symbol',
   });
   const parts = numberFormat.formatToParts(amount);
   let zeroDecimalCurrency: boolean = true;
-  for (let part of parts) {
+  for (const part of parts) {
     if (part.type === 'decimal') {
       zeroDecimalCurrency = false;
     }
@@ -34,14 +34,14 @@ export function formatAmountForStripe(amount: number, currency: string): number 
 
 // Helper function to format amount for display
 export function formatAmountFromStripe(amount: number, currency: string): number {
-  let numberFormat = new Intl.NumberFormat(['en-US'], {
+  const numberFormat = new Intl.NumberFormat(['en-US'], {
     style: 'currency',
     currency: currency,
     currencyDisplay: 'symbol',
   });
   const parts = numberFormat.formatToParts(amount);
   let zeroDecimalCurrency: boolean = true;
-  for (let part of parts) {
+  for (const part of parts) {
     if (part.type === 'decimal') {
       zeroDecimalCurrency = false;
     }
