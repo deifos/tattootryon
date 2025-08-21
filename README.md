@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TattooTraceAI
+
+AI-powered tattoo visualization platform that allows users to see how tattoos will look on their body before getting inked.
+
+## Features
+
+- **Tattoo Overlay**: Upload body part photos and overlay tattoo designs using AI to create realistic visualizations
+- **Tattoo Generation**: Generate custom tattoo designs using AI based on text prompts
+- **Multiple Styles**: Support for various tattoo styles including Traditional, Realistic, Minimalist, and Geometric
+- **Credit System**: Pay-per-use model with affordable credit packages
+- **User Authentication**: Secure sign-in with email verification
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: HeroUI (NextUI)
+- **Authentication**: Better Auth
+- **Database**: PostgreSQL with Prisma ORM
+- **AI Processing**: FAL.ai for image generation and processing
+- **Payments**: Stripe
+- **Deployment**: Vercel
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/deifos/tattootraceai.git
+cd tattootraceai
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+Fill in your environment variables for database, authentication, Stripe, and FAL.ai.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Set up the database:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-## Learn More
+5. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `FAL_KEY` - FAL.ai API key for AI processing
+- `BETTER_AUTH_SECRET` - Authentication secret key
+- `BETTER_AUTH_URL` - Base URL for authentication
+- `NEXT_PUBLIC_APP_URL` - Public app URL
+- `DATABASE_URL` - PostgreSQL connection string
+- `DIRECT_URL` - Direct database connection URL
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
+- `STRIPE_SECRET_KEY` - Stripe secret key
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
+- `STRIPE_CLI_WEBHOOK_SECRET` - Stripe CLI webhook secret (for local testing)
+- `ZEPTOMAIL_API_URL` - ZeptoMail API URL
+- `ZEPTO_MAIL_API_KEY` - ZeptoMail API key
+- `EMAIL_FROM` - Default sender email address
+- `EMAIL_FROM_NAME` - Default sender name
+- `EMAIL_REPLY_TO` - Default reply-to email address
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+MIT License - see LICENSE file for details.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.

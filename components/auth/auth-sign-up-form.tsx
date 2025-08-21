@@ -296,7 +296,7 @@ export function AuthSignUpForm({ className, ...props }: AuthSignUpFormProps) {
               fill
               priority
               alt='Authentication background'
-              className='object-cover dark:brightness-[0.2] dark:grayscale'
+              className='object-cover'
               src='/images/auth-image.png'
             />
           </div>

@@ -230,7 +230,7 @@ export function AuthSignInForm({ className, ...props }: AuthSignInFormProps) {
               fill
               priority
               alt='Authentication background'
-              className='object-cover dark:brightness-[0.2] dark:grayscale'
+              className='object-cover'
               src='/images/tattootraceai-login.webp'
             />
           </div>
