@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Card, CardBody } from '@heroui/card';
@@ -18,8 +18,13 @@ interface PricingTableProps {
 
 export function PricingTable({ variant = 'section', className = '' }: PricingTableProps) {
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleProceedToCheckout = async () => {
     // Check if user is authenticated
@@ -131,8 +136,10 @@ export function PricingTable({ variant = 'section', className = '' }: PricingTab
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               Processing...
             </>
+          ) : mounted && session?.user ? (
+            'Get started'
           ) : (
-            session?.user ? 'Get started' : 'Sign in to purchase'
+            'Sign in to purchase'
           )}
         </Button>
       </CardBody>

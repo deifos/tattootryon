@@ -47,7 +47,6 @@ export function FAQ() {
         </>
       ),
     },
-    
     {
       key: 'upload-requirements',
       title: 'What kind of photo should I upload for best results?',

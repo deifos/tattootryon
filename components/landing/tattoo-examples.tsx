@@ -3,10 +3,13 @@ import Link from "next/link";
 
 export function TattooExamples() {
   return (
-    <div className="w-full gap-6 grid grid-cols-12 grid-rows-5 px-8 sm:px-12 lg:px-16 xl:px-20 h-[1800px]" id="examples">
+    <div className="w-full py-8 sm:py-12 lg:py-16" id="examples">
+      <div className="px-4 sm:px-8 lg:px-12 xl:px-20">
+        {/* Mobile: Single column, Tablet: 2 columns, Desktop: Complex grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-6 lg:grid-rows-5 lg:h-[1800px]">
       
       {/* Large Feature Card - AI Powered */}
-      <Card isFooterBlurred className="col-span-12 md:col-span-6 lg:col-span-5 row-span-2 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card isFooterBlurred className="col-span-1 md:col-span-2 lg:col-span-5 lg:row-span-2 h-80 md:h-96 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-8 rounded-t-lg">
           <p className="text-lg text-white uppercase font-bold tracking-wide">AI Powered</p>
           <h4 className="text-white font-bold text-4xl">Realistic Preview</h4>
@@ -29,7 +32,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Dragon Sleeve */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-3 row-span-1 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-1 lg:col-span-3 lg:row-span-1 h-64 md:h-80 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-6 rounded-t-lg">
           <p className="text-sm text-white uppercase font-bold tracking-wide">Dragon Sleeve</p>
           <h4 className="text-white font-bold text-xl">Traditional Japanese</h4>
@@ -43,7 +46,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Rose Shoulder */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-4 row-span-1 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-1 lg:col-span-4 lg:row-span-1 h-64 md:h-80 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-6 rounded-t-lg">
           <p className="text-sm text-white uppercase font-bold tracking-wide">Rose Shoulder</p>
           <h4 className="text-white font-bold text-xl">Realistic Floral Design</h4>
@@ -57,7 +60,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Geometric */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-3 row-span-1 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-1 lg:col-span-3 lg:row-span-1 h-64 md:h-80 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-6 rounded-t-lg">
           <p className="text-sm text-white uppercase font-bold tracking-wide">Geometric</p>
           <h4 className="text-white font-bold text-xl">Minimalist Art</h4>
@@ -71,7 +74,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Script Text */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-4 row-span-1 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-1 lg:col-span-4 lg:row-span-1 h-64 md:h-80 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-6 rounded-t-lg">
           <p className="text-sm text-white uppercase font-bold tracking-wide">Script Text</p>
           <h4 className="text-white font-bold text-xl">Custom Lettering</h4>
@@ -85,7 +88,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Mandala - Tall */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-5 row-span-2 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-2 lg:col-span-5 lg:row-span-2 h-80 md:h-96 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-8 rounded-t-lg">
           <p className="text-lg text-white uppercase font-bold tracking-wide">Mandala</p>
           <h4 className="text-white font-bold text-3xl">Spiritual Design</h4>
@@ -99,7 +102,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Tribal Card - Tall */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-4 row-span-2 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-1 lg:col-span-4 lg:row-span-2 h-80 md:h-96 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-8 rounded-t-lg">
           <p className="text-lg text-white uppercase font-bold tracking-wide">Tribal</p>
           <h4 className="text-white font-bold text-3xl">Bold Patterns</h4>
@@ -113,7 +116,7 @@ export function TattooExamples() {
       </Card>
       
       {/* Watercolor Card - Tall */}
-      <Card className="col-span-12 md:col-span-6 lg:col-span-3 row-span-2 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+      <Card className="col-span-1 md:col-span-1 lg:col-span-3 lg:row-span-2 h-80 md:h-96 lg:h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
         <CardHeader className="absolute z-10 flex-col items-start bg-gradient-to-b from-black/70 to-transparent p-8 rounded-t-lg">
           <p className="text-lg text-white uppercase font-bold tracking-wide">Watercolor</p>
           <h4 className="text-white font-bold text-3xl">Artistic Splash</h4>
@@ -126,6 +129,8 @@ export function TattooExamples() {
         />
       </Card>
       
+        </div>
+      </div>
     </div>
   );
 }

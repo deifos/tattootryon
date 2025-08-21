@@ -12,11 +12,11 @@ import {
 } from "lucide-react";
 import { AppBackground } from "@/components/app-background";
 import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/Footer";
 import { Button } from "@heroui/button";
 import { CircularPatterns } from "@/components/ink-splash";
 import { TattooExamples } from "@/components/landing/tattoo-examples";
 import { PricingSection } from "@/components/landing/pricing-section";
+import { Footer } from "@/components/footer";
 import { FAQ } from "@/components/landing/faq";
 
 export default function LandingPage() {
@@ -53,7 +53,7 @@ export default function LandingPage() {
         </section>
 
         {/* Full Width Tattoo Examples */}
-        <section className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-content1/50">
+        <section className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-content1/50 mb-8 sm:mb-12 lg:mb-16">
           <TattooExamples />
         </section>
 
