@@ -17,6 +17,14 @@ export const siteConfig = {
       label: 'Examples',
       href: '/#examples',
     },
+    {
+      label: 'Pricing',
+      href: '/#pricing',
+    },
+    {
+      label: 'FAQ',
+      href: '/#faq',
+    },
   ],
   navMenuItems: [
     {
@@ -30,6 +38,14 @@ export const siteConfig = {
     {
       label: 'Examples',
       href: '/#examples',
+    },
+    {
+      label: 'Pricing',
+      href: '/#pricing',
+    },
+    {
+      label: 'FAQ',
+      href: '/#faq',
     },
     {
       label: 'Try Now',

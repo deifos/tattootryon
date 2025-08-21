@@ -7,6 +7,7 @@ import {Textarea} from "@heroui/react";
 import { Tabs, Tab } from "@heroui/tabs"
 import { Wand2, Crown, Skull, Heart, Star, Palette, Type, Brush, Upload, X, Loader2 } from "lucide-react"
 import { useFileReader } from "@/hooks/useFileReader"
+import { useCreditsStore } from "@/lib/credits-store"
 import { FalAIService } from "@/services/fal-ai"
 
 const tattooStyles = [
@@ -82,6 +83,7 @@ export function TattooGenerator({
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { dataUrl, file, error, isLoading, readFile, reset } = useFileReader()
+  const { decrementCredits } = useCreditsStore()
 
   // Memoize tattoo styles to prevent recreation
   const memoizedTattooStyles = useMemo(() => tattooStyles, [])
@@ -160,6 +162,35 @@ export function TattooGenerator({
 
       if (response.images && response.images.length > 0) {
         const generatedImageUrl = response.images[0].url
+        
+        // Record generation and deduct credits
+        try {
+          const recordResponse = await fetch('/api/record-generation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageUrl: generatedImageUrl,
+              baseImageUrl: undefined, // No base image for tattoo design
+              tattooImageUrl: undefined, // This IS the generated tattoo
+              bodyPart: undefined, // No body part for tattoo design
+              prompt: prompt.trim(),
+            }),
+          })
+
+          if (recordResponse.ok) {
+            // Update local credit state for immediate UI feedback
+            decrementCredits(1)
+          } else {
+            const errorData = await recordResponse.json()
+            console.error('Failed to record tattoo design generation:', errorData.error)
+            // Still proceed with showing the image even if recording fails
+          }
+        } catch (creditError) {
+          console.error('Credit recording failed:', creditError)
+          // Still proceed with showing the image even if recording fails
+        }
         
         // Convert the generated image URL to a File object
         const imageFile = await FalAIService.convertUrlToFile(generatedImageUrl, 'generated-tattoo.png')

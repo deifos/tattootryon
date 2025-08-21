@@ -7,7 +7,7 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./lib/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@heroui/theme/dist/components/(button|card|input|modal|slider|tabs|toast|ripple|spinner|form|popover).js"
+    "./node_modules/@heroui/theme/dist/components/(badge|button|card|chip|input|modal|slider|tabs|toast|ripple|spinner|form|popover).js"
   ],
   theme: {
     extend: {
@@ -17,5 +17,19 @@ module.exports = {
     },
   },
   darkMode: 'class',
-  plugins: [heroui()],
+  plugins: [heroui({
+    defaultTheme: 'dark',
+    themes: {
+      light: {
+        colors: {
+          primary: "#226891", // Your custom primary color
+        },
+      },
+      dark: {
+        colors: {
+          primary: "#226891", // Custom primary color for dark mode
+        },
+      },
+    },
+  })],
 };

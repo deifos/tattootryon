@@ -15,7 +15,9 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@heroui/button";
 import { CircularPatterns } from "@/components/ink-splash";
-import { TattooExamples } from "@/components/tattoo-examples";
+import { TattooExamples } from "@/components/landing/tattoo-examples";
+import { PricingSection } from "@/components/landing/pricing-section";
+import { FAQ } from "@/components/landing/faq";
 
 export default function LandingPage() {
   return (
@@ -51,7 +53,7 @@ export default function LandingPage() {
         </section>
 
         {/* Full Width Tattoo Examples */}
-        <section className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] py-20 bg-content1/50">
+        <section className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-content1/50">
           <TattooExamples />
         </section>
 
@@ -214,7 +216,7 @@ export default function LandingPage() {
 
         {/* Social Proof */}
         <section
-          id="examples"
+          id="reviews"
           className="py-20 px-4 sm:px-6 lg:px-8 bg-content2 border-t-4 border-divider relative z-10"
         >
           <div className="max-w-7xl mx-auto">
@@ -313,6 +315,12 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Pricing Section */}
+        <PricingSection />
+
+        {/* FAQ Section */}
+        <FAQ />
 
         {/* CTA Section */}
         <section className="py-20 px-4 sm:px-6 lg:px-8 border-t-4 border-divider relative z-10">

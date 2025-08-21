@@ -9,6 +9,7 @@ import {
   NavbarItem,
   NavbarMenuItem,
 } from "@heroui/navbar";
+import { Button } from "@heroui/button";
 import { link as linkStyles } from "@heroui/theme";
 import NextLink from "next/link";
 import clsx from "clsx";
@@ -24,6 +25,7 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
+    <>
     <HeroUINavbar
       className="backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-divider py-2"
       isMenuOpen={isMenuOpen}
@@ -35,7 +37,8 @@ export const Navbar = () => {
         <NavbarBrand as="li" className="gap-3 max-w-fit">
           <NextLink className="flex justify-start items-center gap-1" href="/">
             <Logo />
-            <p className="font-bold text-inherit">TattooTraceAI</p>
+            <p className="font-bold text-inherit hidden sm:block">TattooTraceAI</p>
+            <p className="font-bold text-inherit sm:hidden">ttai</p>
           </NextLink>
         </NavbarBrand>
         <ul className="hidden lg:flex gap-4 justify-start ml-2">
@@ -59,7 +62,7 @@ export const Navbar = () => {
         className="hidden sm:flex basis-1/5 sm:basis-full"
         justify="end"
       >
-          <GitHubStarButton />
+        <GitHubStarButton />
         <NavbarItem className="flex gap-3">
           <NextLink
             href="/dashboard"
@@ -96,8 +99,13 @@ export const Navbar = () => {
               </NextLink>
             </NavbarMenuItem>
           ))}
+          <NavbarMenuItem>
+            
+          </NavbarMenuItem>
         </div>
       </NavbarMenu>
     </HeroUINavbar>
+
+    </>
   );
 };

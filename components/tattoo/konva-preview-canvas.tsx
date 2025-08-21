@@ -228,22 +228,6 @@ export function KonvaPreviewCanvas({
     }
   }
 
-  // Download generated image
-  const downloadGeneratedImage = () => {
-    if (!generatedImage) return
-
-    try {
-      const link = document.createElement('a')
-      link.download = 'generated-tattoo-result.png'
-      link.href = generatedImage
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } catch (error) {
-      console.error("Failed to download generated image:", error)
-      onError?.("Failed to download generated image")
-    }
-  }
 
   // Handle back to editor
   const handleBackToEditor = () => {
@@ -267,7 +251,7 @@ export function KonvaPreviewCanvas({
           className="w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
           style={{ minHeight: '500px' }}
         >
-          {baseImageLoader.isLoading || tattooImageLoader.isLoading ? (
+          {baseImageLoader.isLoading || tattooImageLoader.isLoading || (stageSize.width === 0 && (baseImage || generatedImage)) ? (
             <LoadingView />
           ) : generatedImage && !tattooImage ? (
             <GeneratedImageView 
@@ -315,7 +299,6 @@ export function KonvaPreviewCanvas({
             onApplyTattoo={handleApplyTattoo}
             onReset={resetCanvas}
             onExportCanvas={exportImage}
-            onDownloadResult={downloadGeneratedImage}
           />
         </div>
       </CardBody>

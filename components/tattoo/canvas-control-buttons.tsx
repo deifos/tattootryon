@@ -2,6 +2,7 @@
 
 import { Button } from "@heroui/button"
 import { Zap, RotateCcw, Download, Loader2 } from "lucide-react"
+import { DownloadButton } from "@/components/ui/download-button"
 
 interface CanvasControlButtonsProps {
   baseImage: string | null
@@ -12,7 +13,6 @@ interface CanvasControlButtonsProps {
   onApplyTattoo: () => void
   onReset: () => void
   onExportCanvas: () => void
-  onDownloadResult: () => void
 }
 
 export function CanvasControlButtons({
@@ -24,7 +24,6 @@ export function CanvasControlButtons({
   onApplyTattoo,
   onReset,
   onExportCanvas,
-  onDownloadResult,
 }: CanvasControlButtonsProps) {
   return (
     <div className="flex gap-2">
@@ -52,10 +51,15 @@ export function CanvasControlButtons({
         Export Canvas
       </Button>
       {generatedImage && (
-        <Button variant="solid" size="sm" onPress={onDownloadResult}>
+        <DownloadButton
+          src={generatedImage}
+          filename="generated-tattoo-result.png"
+          variant="solid"
+          size="sm"
+        >
           <Download className="w-4 h-4 mr-2" />
           Download Result
-        </Button>
+        </DownloadButton>
       )}
     </div>
   )

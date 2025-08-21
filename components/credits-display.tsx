@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
-import { Link } from '@heroui/link';
 
 import { useCreditsStore } from '@/lib/credits-store';
+import { usePricingModal } from './pricing-modal';
 
 interface CreditsDisplayProps {
   userId: string;
@@ -17,6 +17,7 @@ export function CreditsDisplay({
   compact = false,
 }: CreditsDisplayProps) {
   const { creditInfo, fetchCredits } = useCreditsStore();
+  const { onOpen, PricingModal } = usePricingModal();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export function CreditsDisplay({
   }, [userId, creditInfo, fetchCredits]);
 
   if (loading) {
-    return compact ? (
+    const loadingContent = compact ? (
       <div className='flex items-center gap-2 px-3 py-1 bg-default-100 rounded-full'>
         <div className='animate-pulse'>
           <div className='h-3 bg-default-300 rounded w-16' />
@@ -46,45 +47,45 @@ export function CreditsDisplay({
         </CardBody>
       </Card>
     );
-  }
-
-  if (compact) {
-    const zeroCredits = creditInfo === null || creditInfo?.total === 0;
-
+    
     return (
-      <div className='flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-full'>
-        {/* Credits label and value: hide on mobile if zero credits to avoid overflow */}
-        <div
-          className={
-            zeroCredits
-              ? 'hidden sm:flex items-center gap-2'
-              : 'flex items-center gap-2'
-          }
-        >
-          <span className='text-xs text-default-600'>Credits:</span>
-          <div className='flex items-center gap-1'>
-            <span className='text-sm font-bold text-primary'>
-              {creditInfo?.total ?? 0}
-            </span>
-          </div>
-        </div>
-        {zeroCredits && (
-          <Button
-            as={Link}
-            className='ml-0 sm:ml-2 h-6 px-2 text-xs'
-            color='primary'
-            href='/#pricing'
-            size='sm'
-            variant='flat'
-          >
-            Buy
-          </Button>
-        )}
-      </div>
+      <>
+        {loadingContent}
+        <PricingModal />
+      </>
     );
   }
 
-  return (
+  const content = compact ? (
+    <div className='flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-full'>
+      {/* Credits label and value: hide on mobile if zero credits to avoid overflow */}
+      <div
+        className={
+          (creditInfo === null || creditInfo?.total === 0)
+            ? 'hidden sm:flex items-center gap-2'
+            : 'flex items-center gap-2'
+        }
+      >
+        <span className='text-xs text-default-600'>Credits:</span>
+        <div className='flex items-center gap-1'>
+          <span className='text-sm font-bold text-primary'>
+            {creditInfo?.total ?? 0}
+          </span>
+        </div>
+      </div>
+      {(creditInfo === null || creditInfo?.total === 0) && (
+        <Button
+          className='ml-0 sm:ml-2 h-6 px-2 text-xs'
+          color='primary'
+          onPress={onOpen}
+          size='sm'
+          variant='flat'
+        >
+          Buy
+        </Button>
+      )}
+    </div>
+  ) : (
     <Card className='w-full bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200'>
       <CardBody className='text-center'>
         {creditInfo === null || creditInfo?.total === 0 ? (
@@ -96,9 +97,8 @@ export function CreditsDisplay({
               </p>
             </div>
             <Button
-              as={Link}
               color='primary'
-              href='/#pricing'
+              onPress={onOpen}
               size='sm'
               variant='flat'
             >
@@ -127,5 +127,12 @@ export function CreditsDisplay({
         )}
       </CardBody>
     </Card>
+  );
+
+  return (
+    <>
+      {content}
+      <PricingModal />
+    </>
   );
 }

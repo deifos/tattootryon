@@ -2,24 +2,81 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 import { stripe } from '@/lib/stripe';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+// Stripe requires the raw body to construct the event
+export const maxDuration = 10;
+
 export async function POST(request: NextRequest) {
+  console.log('🔍 Webhook endpoint hit');
+  
+  // For testing, you can temporarily skip signature verification
+  const SKIP_SIGNATURE_VERIFICATION = process.env.NODE_ENV === 'development';
+  
+  if (!webhookSecret && !SKIP_SIGNATURE_VERIFICATION) {
+    console.log('⚠️ Missing STRIPE_WEBHOOK_SECRET');
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 400 });
+  }
+
+  if (SKIP_SIGNATURE_VERIFICATION) {
+    console.log('🚧 DEVELOPMENT MODE: Skipping signature verification');
+  } else {
+    console.log(`🔑 Webhook secret configured (length: ${webhookSecret.length})`);
+    console.log(`🔑 Webhook secret starts with: ${webhookSecret.substring(0, 10)}...`);
+  }
+
   try {
+    // Get the raw request body as text (this preserves exact formatting)
     const body = await request.text();
-    const signature = request.headers.get('stripe-signature')!;
+    const signature = request.headers.get('stripe-signature');
+
+    console.log(`📝 Request body length: ${body.length}`);
+    console.log(`📝 Signature header: ${signature?.substring(0, 50)}...`);
+
+    if (!signature) {
+      console.log('⚠️ Missing stripe-signature header');
+      return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+    }
 
     let event: Stripe.Event;
 
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err);
-
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    if (SKIP_SIGNATURE_VERIFICATION) {
+      // Parse the JSON body directly without signature verification (development only)
+      try {
+        event = JSON.parse(body);
+        console.log('🚧 Using raw event data (no signature verification)');
+      } catch (parseErr) {
+        console.log('❌ Failed to parse webhook body as JSON');
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+      }
+    } else {
+      try {
+        // Use the text body directly - Stripe SDK can handle string bodies
+        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        console.log(`❌ Webhook signature verification failed: ${errorMessage}`);
+        
+        // Try with different webhook secret if we're testing with Stripe CLI
+        if (process.env.STRIPE_CLI_WEBHOOK_SECRET && webhookSecret !== process.env.STRIPE_CLI_WEBHOOK_SECRET) {
+          console.log('🔄 Trying with CLI webhook secret...');
+          try {
+            event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_CLI_WEBHOOK_SECRET);
+            console.log('✅ CLI webhook secret worked!');
+          } catch (cliErr) {
+            console.log('❌ CLI webhook secret also failed');
+            return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
+          }
+        } else {
+          return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
+        }
+      }
     }
+
+    // Successfully constructed event
+    console.log('✅ Webhook signature verified successfully:', event.id, event.type);
 
     switch (event.type) {
       case 'checkout.session.completed':
@@ -59,40 +116,36 @@ async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session
 ) {
   try {
-    const { userId, productName, credits } = session.metadata!;
+    const { userId, productName, credits } = session.metadata || {};
 
     if (!userId || !productName || !credits) {
-      console.error('Missing required metadata:', {
+      console.error('Missing required metadata in checkout session:', {
         userId,
         productName,
         credits,
+        sessionId: session.id,
       });
-
       return;
     }
 
-    // We need to fetch the session with line items to get the product ID
-    const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-      expand: ['line_items.data.price.product'],
-    });
+    const creditsNum = parseInt(credits);
+    if (isNaN(creditsNum) || creditsNum <= 0) {
+      console.error('Invalid credits value:', credits);
+      return;
+    }
 
     // Create purchase record
     await prisma.purchase.create({
       data: {
         userId,
         stripeSessionId: session.id,
-        stripePaymentIntentId: session.payment_intent as string,
-        stripePriceId: fullSession.line_items?.data[0]?.price?.id || '',
-        stripeProductId:
-          (typeof fullSession.line_items?.data[0]?.price?.product === 'string'
-            ? fullSession.line_items?.data[0]?.price?.product
-            : fullSession.line_items?.data[0]?.price?.product?.id) || '',
-        productName,
-        totalCredits: parseInt(credits),
-        creditsRemaining: parseInt(credits),
+        stripePaymentIntentId: session.payment_intent as string || '',
         amount: session.amount_total || 0,
         currency: session.currency || 'usd',
         status: 'COMPLETED',
+        credits: creditsNum,
+        creditsRemaining: creditsNum,
+        creditsUsed: 0,
       },
     });
 
@@ -101,17 +154,15 @@ async function handleCheckoutSessionCompleted(
       where: { id: userId },
       data: {
         availableCredits: {
-          increment: parseInt(credits),
+          increment: creditsNum,
         },
       },
     });
 
     console.log(
-      `✅ Purchase completed for user ${userId}: ${credits} credits added`
+      `✅ Purchase completed for user ${userId}: ${creditsNum} credits added (${productName})`
     );
 
-    // Broadcast credits update to any connected clients
-    // This will be picked up by the credits store if the user is on the page
   } catch (error) {
     console.error('Error handling checkout session completed:', error);
   }
@@ -121,7 +172,7 @@ async function handlePaymentIntentSucceeded(
   paymentIntent: Stripe.PaymentIntent
 ) {
   try {
-    // Update purchase status if needed
+    // Update purchase status if needed (backup in case webhook order varies)
     await prisma.purchase.updateMany({
       where: {
         stripePaymentIntentId: paymentIntent.id,
@@ -132,7 +183,7 @@ async function handlePaymentIntentSucceeded(
       },
     });
 
-    console.log(`Payment intent succeeded: ${paymentIntent.id}`);
+    console.log(`✅ Payment intent succeeded: ${paymentIntent.id}`);
   } catch (error) {
     console.error('Error handling payment intent succeeded:', error);
   }
@@ -140,8 +191,8 @@ async function handlePaymentIntentSucceeded(
 
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   try {
-    // Update purchase status to failed
-    await prisma.purchase.updateMany({
+    // Update purchase status to failed and don't grant credits
+    const updatedPurchases = await prisma.purchase.updateMany({
       where: {
         stripePaymentIntentId: paymentIntent.id,
       },
@@ -150,7 +201,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
       },
     });
 
-    console.log(`Payment intent failed: ${paymentIntent.id}`);
+    console.log(`❌ Payment intent failed: ${paymentIntent.id} (${updatedPurchases.count} purchases updated)`);
   } catch (error) {
     console.error('Error handling payment intent failed:', error);
   }

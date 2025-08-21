@@ -1,7 +1,7 @@
 /**
  * Application Configuration
  *
- * Centralized configuration for Tattootrace AI application.
+ * Centralized configuration for TattooTraceAI application.
  * All hardcoded values should be defined here for easy maintenance.
  */
 
@@ -16,20 +16,13 @@ export const CREDITS_CONFIG = {
   // Default generation settings
   DEFAULT_NUM_IMAGES: 1,
   DEFAULT_IMAGE_SIZE: 'square_hd' as const,
-  DEFAULT_STYLE: 'AUTO' as const,
-  DEFAULT_RENDERING_SPEED: 'BALANCED' as const,
 
-  // Credit packages (prices in cents)
-  PACKAGES: {
-    STARTER: {
-      credits: 20,
-      price: 1200, // $12.00
-      pricePerImage: 0.6,
-    },
-    CREATOR: {
-      credits: 40,
+  // Credit package (price in cents)
+  PACKAGE: {
+    CRAZY_INK_PACK: {
+      credits: 50,
       price: 2000, // $20.00
-      pricePerImage: 0.5,
+      pricePerImage: 0.4,
     },
   },
 } as const;
@@ -40,25 +33,24 @@ export const API_CONFIG = {
   ENDPOINTS: {
     FAL_PROXY: '/api/fal/proxy',
     RECORD_GENERATION: '/api/record-generation',
-    USER_CREDITS: '/api/user/credits',
-    USER_GENERATIONS: '/api/user/generations',
     STRIPE_CHECKOUT: '/api/stripe/create-checkout-session',
-    AUTH_RESEND_VERIFICATION: '/api/auth/resend-verification',
+    STRIPE_WEBHOOK: '/api/stripe/webhook',
   },
 
   // External services
   EXTERNAL: {
     FAL_AI_URL: 'https://fal.ai',
-    TWITTER_URL: 'https://x.com/deifosv',
-    FEEDBACK_WIDGET_URL:
-      'https://www.feedbackbasket.com/api/widget/script/cme3q0an50001jm04d6extjp1',
   },
 } as const;
 
 // UI Configuration
 export const UI_CONFIG = {
-  // Loading states
-  LOADING_SKELETONS: 6,
+  // Canvas settings for tattoo overlay
+  CANVAS: {
+    DEFAULT_WIDTH: 800,
+    DEFAULT_HEIGHT: 600,
+    MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+  },
 
   // Gallery settings
   GRID_COLUMNS: {
@@ -73,17 +65,16 @@ export const BUSINESS_CONFIG = {
   // Company information
   COMPANY_NAME: 'TattooTraceAI',
   SUPPORT_EMAIL: 'support@tattootraceai.com',
-  NOREPLY_EMAIL: 'noreply@tattootraceai.com',
 
   // Branding
   TAGLINES: {
-    MAIN: 'AI-Powered Tattoo Try-On',
+    MAIN: 'See Your Tattoo Before You Ink',
     PRICING: 'One-time payment • No subscriptions',
   },
 
   // Legal
   REFUND_POLICY: 'No refunds due to computational costs',
-  TERMS_VERSION: '2024-01-01',
+  TERMS_VERSION: '2024-08-21',
 } as const;
 
 // Development Configuration
@@ -105,5 +96,4 @@ export const APP_CONFIG = {
 } as const;
 
 // Type exports for better TypeScript support
-export type CreditsPackage = keyof typeof CREDITS_CONFIG.PACKAGES;
 export type ApiEndpoint = keyof typeof API_CONFIG.ENDPOINTS;

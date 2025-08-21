@@ -5,6 +5,21 @@ const fal = createFalClient({
   proxyUrl: "/api/fal/proxy",
 })
 
+// Create a client for credit-requiring operations with custom headers
+const falWithCredits = createFalClient({
+  credentials: () => process.env.FAL_KEY as string,
+  proxyUrl: "/api/fal/proxy",
+  fetch: (url, options = {}) => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'x-requires-credits': 'true'
+      }
+    });
+  }
+})
+
 interface FalAIRequest {
   imageUrl: string
   prompt: string
@@ -54,7 +69,7 @@ export class FalAIService {
       
       const fullPrompt = `${request.prompt}${stylePrompt}, tattoo design, black ink on white background, high quality, detailed`
 
-      const result = await fal.subscribe("fal-ai/qwen-image", {
+      const result = await falWithCredits.subscribe("fal-ai/qwen-image", {
         input: {
           prompt: fullPrompt,
           image_size: request.image_size || "square",
@@ -100,13 +115,13 @@ export class FalAIService {
       const loras = request.loraUrl ? [{ path: request.loraUrl, scale: 1 }] : [{ path: TATTOO_LORA_URL, scale: 1 }]
       console.log(request)
       
-      const result = await fal.subscribe("fal-ai/flux-kontext-lora", {
+      const result = await falWithCredits.subscribe("fal-ai/flux-kontext-lora", {
         input: {
           image_url: request.imageUrl,
           prompt: `place this tattoo, ${request.prompt}`,
           loras,
-          num_inference_steps: request.num_inference_steps || 30,
-          guidance_scale: request.guidance_scale || 2.5,
+          num_inference_steps: request.num_inference_steps || 40,
+          guidance_scale: request.guidance_scale || 3.5,
           num_images: request.num_images || 1,
           enable_safety_checker: false,
           resolution_mode: request.resolution_mode || "match_input",
@@ -172,17 +187,12 @@ export class FalAIService {
 
     // Convert data URL to blob and upload to FAL storage
     try {
-      console.log('Converting data URL to blob...')
       const response = await fetch(dataUrl)
-      console.log('Fetch response status:', response.status)
       
       const blob = await response.blob()
-      console.log('Blob created, size:', blob.size, 'type:', blob.type)
       
       // Upload to FAL storage
-      console.log('Uploading to FAL storage...')
       const uploadResult = await fal.storage.upload(blob)
-      console.log('Upload result:', uploadResult, 'Type:', typeof uploadResult)
       
       // Handle both string and object responses
       let imageUrl: string
@@ -199,7 +209,6 @@ export class FalAIService {
         throw new Error('Upload failed - empty URL returned')
       }
       
-      console.log('Upload successful, returning URL:', imageUrl)
       return imageUrl
     } catch (error) {
       console.error('Image upload error:', error)

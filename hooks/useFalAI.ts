@@ -37,23 +37,7 @@ export function useFalAI(options: UseFalAIOptions = {}) {
     setResult(prev => ({ ...prev, isGenerating: true, error: null }))
 
     try {
-      // Check if user has credits before generation
-      if (options.userId) {
-        const response = await fetch('/api/user/credits')
-        if (response.ok) {
-          const creditInfo = await response.json()
-          if (creditInfo.total < 1) {
-            addToast({
-              title: "Insufficient Credits",
-              description: "Please purchase more credits to continue generating tattoos.",
-              color: "danger",
-            })
-            throw new Error('Insufficient credits. Please purchase more credits to continue.')
-          }
-        } else {
-          throw new Error('Failed to check credit balance')
-        }
-      }
+
       // Upload or prepare the composite image
       console.log('Uploading composite image...')
       console.log('Input data URL length:', compositeImageDataUrl?.length)
@@ -66,7 +50,7 @@ export function useFalAI(options: UseFalAIOptions = {}) {
         throw new Error('Upload returned undefined/null image URL')
       }
 
-      // Generate the tattoo
+      // Generate the tattoo (proxy will check credits server-side)
       const response = await FalAIService.generateTattoo({
         imageUrl: imageUrl,
         prompt: additionalPrompt,
@@ -104,7 +88,9 @@ export function useFalAI(options: UseFalAIOptions = {}) {
               })
             } else {
               const errorData = await recordResponse.json()
-              throw new Error(errorData.error || 'Failed to record generation')
+              console.error('Failed to record generation:', errorData.error)
+              // Don't show another toast since we already generated successfully
+              // Just log the error - the generation itself was successful
             }
           } catch (creditError) {
             console.error('Generation recording failed:', creditError)
@@ -125,7 +111,27 @@ export function useFalAI(options: UseFalAIOptions = {}) {
         throw new Error('No images returned from FAL AI')
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate tattoo'
+      let errorMessage = 'Failed to generate tattoo'
+      
+      if (error instanceof Error) {
+        errorMessage = error.message
+        
+        // Handle insufficient credits error from proxy
+        if (error.message.includes('Insufficient credits')) {
+          addToast({
+            title: "Insufficient Credits",
+            description: "Please purchase more credits to continue generating tattoos.",
+            color: "danger",
+          })
+        } else {
+          // Show generic error toast for other failures
+          addToast({
+            title: "Generation Failed",
+            description: errorMessage,
+            color: "danger",
+          })
+        }
+      }
       
       setResult({
         imageUrl: null,

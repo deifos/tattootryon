@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import Stripe from 'stripe';
 
 import { auth } from '@/lib/auth';
-import { stripe } from '@/lib/stripe';
-import prisma from '@/lib/prisma';
+import { stripe, CURRENCY, formatAmountForStripe } from '@/lib/stripe';
+import { prisma } from '@/lib/prisma';
+import { CRAZY_INK_PACK } from '@/config/pricing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,30 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { priceId } = await request.json();
+    // Get the request origin for success/cancel URLs
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL;
 
-    if (!priceId) {
-      return NextResponse.json(
-        { error: 'Price ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Determine product details based on price ID
-    let productName: string;
-    let credits: number;
-
-    if (priceId === process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID) {
-      productName = 'Starter';
-      credits = 20;
-    } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_CREATOR_PRICE_ID) {
-      productName = 'Creator';
-      credits = 40;
-    } else {
-      return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 });
-    }
-
-    // Ensure user has a Stripe customer ID
+    // Ensure user exists
     let user = await prisma.user.findUnique({
       where: { id: session.user.id },
     });
@@ -45,6 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Ensure user has a Stripe customer ID
     let customerId = user.stripeCustomerId;
 
     if (!customerId) {
@@ -66,29 +49,43 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create Stripe checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // Create Checkout Sessions from our Crazy Ink Pack product
+    const params: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
+      submit_type: 'pay',
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: CURRENCY,
+            product_data: {
+              name: CRAZY_INK_PACK.name,
+              description: `${CRAZY_INK_PACK.credits} AI image generations`,
+            },
+            unit_amount: formatAmountForStripe(CRAZY_INK_PACK.price, CURRENCY), // $20.00
+          },
           quantity: 1,
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?canceled=true`,
+      success_url: `${origin}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard?canceled=true`,
       metadata: {
         userId: session.user.id,
-        productName,
-        credits: credits.toString(),
+        productName: CRAZY_INK_PACK.name,
+        credits: CRAZY_INK_PACK.credits.toString(),
       },
-    });
+    };
+
+    const checkoutSession: Stripe.Checkout.Session = await stripe.checkout.sessions.create(params);
 
     return NextResponse.json({ sessionId: checkoutSession.id });
   } catch (error) {
     console.error('Error creating checkout session:', error);
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json(
       { error: 'Internal server error' },
