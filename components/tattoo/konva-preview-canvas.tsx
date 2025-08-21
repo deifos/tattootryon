@@ -25,6 +25,7 @@ interface KonvaPreviewCanvasProps {
   onError?: (error: string) => void
   onGeneratedResult?: (imageUrl: string) => void
   onTattooRemove?: () => void
+  userId?: string
 }
 
 
@@ -51,6 +52,7 @@ export function KonvaPreviewCanvas({
   onError,
   onGeneratedResult,
   onTattooRemove,
+  userId,
 }: KonvaPreviewCanvasProps) {
   // State
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -82,7 +84,11 @@ export function KonvaPreviewCanvas({
     },
     onError: (error) => {
       onError?.(error)
-    }
+    },
+    userId,
+    baseImageUrl: baseImage || undefined,
+    tattooImageUrl: tattooImage || undefined,
+    bodyPart
   })
 
   // Keyboard events

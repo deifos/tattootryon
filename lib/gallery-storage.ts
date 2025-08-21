@@ -9,7 +9,7 @@ export interface GalleryItem {
 }
 
 const GALLERY_STORAGE_KEY = 'tattoo-gallery'
-const MAX_ITEMS_PER_TYPE = 20
+const MAX_ITEMS_PER_TYPE = 10
 
 class GalleryStorage {
   private getItems(): GalleryItem[] {
@@ -29,8 +29,66 @@ class GalleryStorage {
     try {
       localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(items))
     } catch (error) {
-      console.warn('Failed to save to localStorage:', error)
+      console.warn('Failed to save to localStorage, attempting cleanup:', error)
+      
+      // If storage is full, aggressively clean up old items
+      if (error instanceof DOMException && (error.code === 22 || error.name === 'QuotaExceededError')) {
+        this.performEmergencyCleanup(items)
+      } else {
+        throw error // Re-throw if it's not a quota error
+      }
     }
+  }
+
+  private saveItemsWithRetry(items: GalleryItem[], newItem: GalleryItem): void {
+    try {
+      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(items))
+    } catch (error) {
+      console.warn('Failed to save to localStorage, performing emergency cleanup:', error)
+      
+      if (error instanceof DOMException && (error.code === 22 || error.name === 'QuotaExceededError')) {
+        // Emergency cleanup: keep only 3 most recent of each type + the new item
+        const cleanedItems = this.performEmergencyCleanup(items, newItem)
+        
+        try {
+          localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(cleanedItems))
+          console.log(`Emergency cleanup successful: ${items.length} → ${cleanedItems.length} items`)
+        } catch (retryError) {
+          console.error('Emergency cleanup failed, clearing all storage:', retryError)
+          localStorage.removeItem(GALLERY_STORAGE_KEY)
+          // Save just the new item
+          try {
+            localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify([newItem]))
+          } catch (finalError) {
+            console.error('Could not save even single item:', finalError)
+          }
+        }
+      } else {
+        throw error
+      }
+    }
+  }
+
+  private performEmergencyCleanup(items: GalleryItem[], newItem: GalleryItem): GalleryItem[] {
+    console.log('Performing emergency cleanup - storage quota exceeded')
+    
+    // Keep only the 3 most recent items of each type (excluding the new item)
+    const cleanedItems: GalleryItem[] = []
+    const types: Array<GalleryItem['type']> = ['base', 'tattoo', 'result']
+    
+    types.forEach(type => {
+      const itemsOfType = items
+        .filter(item => item.type === type && item.id !== newItem.id)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 3) // Keep only 3 most recent (not including new item)
+      
+      cleanedItems.push(...itemsOfType)
+    })
+    
+    // Always include the new item
+    cleanedItems.push(newItem)
+    
+    return cleanedItems
   }
 
   /**
@@ -111,7 +169,7 @@ class GalleryStorage {
     const thumbnail = await this.generateThumbnail(imageUrl)
     
     const newItem: GalleryItem = {
-      id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       type,
       imageUrl,
       thumbnail,
@@ -135,7 +193,9 @@ class GalleryStorage {
 
     // Add new item
     items.push(newItem)
-    this.saveItems(items)
+    
+    // Try to save, with automatic cleanup on quota exceeded
+    this.saveItemsWithRetry(items, newItem)
     
     return newItem
   }

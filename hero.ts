@@ -12,6 +12,7 @@ const config = {
       fontFamily: {
         sans: ['var(--font-sans)'],
         mono: ['var(--font-mono)'],
+        cursive: ['var(--font-dancing-script)', 'Dancing Script', 'cursive'],
       },
     },
   },

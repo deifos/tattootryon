@@ -5,24 +5,21 @@ import { ImageUploadCard } from "./image-upload-card"
 import { TattooGenerator } from "./tattoo-generator"
 import { PreviewCanvas } from "./preview-canvas"
 import { ErrorBoundary } from "../error-boundary"
-import { Upload, AlertCircle, X } from "lucide-react"
-import { Button } from "@heroui/button"
+import { Upload } from "lucide-react"
 import { galleryStorage, type GalleryItem } from "@/lib/gallery-storage"
 import { DeleteConfirmationDialog, type DeleteConfirmationState } from "./delete-confirmation-dialog"
 import { GallerySection } from "./gallery-section"
-import { Card, CardBody } from "@heroui/card"
+import { addToast } from "@heroui/toast"
 
-interface ErrorState {
-  message: string
-  timestamp: number
+interface TattooTryOnClientProps {
+  userId?: string
 }
 
-export function TattooTryOnClient() {
+export function TattooTryOnClient({ userId }: TattooTryOnClientProps) {
   const [baseImage, setBaseImage] = useState<string | null>(null)
   const [tattooImage, setTattooImage] = useState<string | null>(null)
   const [bodyPart, setBodyPart] = useState<string>("")
   const [isApplying, setIsApplying] = useState(false)
-  const [errors, setErrors] = useState<ErrorState[]>([])
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([])
   
   // Confirmation dialog state
@@ -36,34 +33,31 @@ export function TattooTryOnClient() {
     setGalleryItems(galleryStorage.getAllItems())
   }, [])
 
-  const addError = useCallback((message: string) => {
-    const error: ErrorState = {
-      message,
-      timestamp: Date.now(),
-    }
-    setErrors(prev => [...prev, error])
-    
-    // Auto-remove error after 5 seconds
-    setTimeout(() => {
-      setErrors(prev => prev.filter(e => e.timestamp !== error.timestamp))
-    }, 5000)
-  }, [])
-
-  const removeError = useCallback((timestamp: number) => {
-    setErrors(prev => prev.filter(e => e.timestamp !== timestamp))
+  const showError = useCallback((message: string) => {
+    addToast({
+      title: "Error",
+      description: message,
+      color: "danger",
+    })
   }, [])
 
   const handleBaseImageUpload = useCallback(async (dataUrl: string, file: File) => {
+    console.log('handleBaseImageUpload called with:', { fileName: file.name, bodyPart, dataUrlLength: dataUrl.length })
     setBaseImage(dataUrl)
     
     // Save to gallery
     try {
-      await galleryStorage.addItem('base', dataUrl, file.name, bodyPart)
-      setGalleryItems(galleryStorage.getAllItems())
+      console.log('About to call galleryStorage.addItem...')
+      const result = await galleryStorage.addItem('base', dataUrl, file.name, bodyPart)
+      console.log('Gallery item added successfully:', result)
+      const allItems = galleryStorage.getAllItems()
+      console.log('All gallery items after adding:', allItems.length, allItems.filter(i => i.type === 'base').length)
+      setGalleryItems(allItems)
     } catch (error) {
-      console.warn('Failed to save base image to gallery:', error)
+      console.error('Failed to save base image to gallery:', error)
+      showError('Failed to save image to gallery')
     }
-  }, [bodyPart])
+  }, [bodyPart, showError])
 
   const handleTattooImageChange = useCallback(async (dataUrl: string, file: File) => {
     setTattooImage(dataUrl)
@@ -88,7 +82,7 @@ export function TattooTryOnClient() {
 
   const applyTattooToBase = async () => {
     if (!baseImage || !tattooImage) {
-      addError("Please upload both a base image and a tattoo design")
+      showError("Please upload both a base image and a tattoo design")
       return
     }
 
@@ -99,7 +93,7 @@ export function TattooTryOnClient() {
       // In a real app, this would use AI to realistically apply the tattoo to the base image
     } catch (error) {
       console.error("Failed to apply tattoo:", error)
-      addError("Failed to apply tattoo. Please try again.")
+      showError("Failed to apply tattoo. Please try again.")
     } finally {
       setIsApplying(false)
     }
@@ -165,30 +159,6 @@ export function TattooTryOnClient() {
 
   return (
     <>
-      {/* Error Messages */}
-      {errors.length > 0 && (
-        <div className="fixed top-4 right-4 z-50 space-y-2">
-          {errors.map((error) => (
-            <Card key={error.timestamp} className="border-red-200 bg-red-50 shadow-lg">
-              <CardBody className="p-3">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  <p className="text-sm text-red-700 flex-1">{error.message}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeError(error.timestamp)}
-                    className="h-6 w-6 p-0 text-red-600 hover:bg-red-100"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left Panel - Upload & Generate */}
         <div className="space-y-4">
@@ -199,7 +169,7 @@ export function TattooTryOnClient() {
               image={baseImage}
               onImageUpload={handleBaseImageUpload}
               onImageRemove={handleBaseImageRemove}
-              onError={addError}
+              onError={showError}
               placeholder="Click or drag to upload base image"
               icon={Upload}
               disabled={isApplying}
@@ -215,7 +185,7 @@ export function TattooTryOnClient() {
               tattooImage={tattooImage}
               onTattooImageChange={handleTattooImageChange}
               onTattooImageRemove={handleTattooImageRemove}
-              onError={addError}
+              onError={showError}
               disabled={isApplying}
             />
           </ErrorBoundary>
@@ -230,9 +200,10 @@ export function TattooTryOnClient() {
               bodyPart={bodyPart}
               onApplyTattoo={applyTattooToBase}
               isApplying={isApplying}
-              onError={addError}
+              onError={showError}
               onGeneratedResult={handleGeneratedResult}
               onTattooRemove={handleTattooImageRemove}
+              userId={userId}
             />
           </ErrorBoundary>
         </div>
