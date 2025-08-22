@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useMemo, useCallback, useEffect } from "react"
+import Image from "next/image"
 import { Button } from "@heroui/button"
 import { Card, CardBody } from "@heroui/card"
 import {Textarea} from "@heroui/react";
@@ -206,7 +207,7 @@ export function TattooGenerator({
     } finally {
       setIsGenerating(false)
     }
-  }, [prompt, selectedStyle, disabled, isGenerating, onTattooImageChange, onError, memoizedTattooStyles])
+  }, [prompt, selectedStyle, disabled, isGenerating, onTattooImageChange, onError, memoizedTattooStyles, decrementCredits])
 
   return (
     <div className="w-full">
@@ -232,10 +233,13 @@ export function TattooGenerator({
                 </div>
               ) : tattooImage ? (
                 <div className="relative group">
-                  <img
+                  <Image
                     src={tattooImage}
                     alt="Tattoo design"
+                    width={400}
+                    height={192}
                     className="w-full h-48 object-contain bg-gray-50 rounded hover:opacity-90 transition-opacity"
+                    unoptimized
                   />
                   {onTattooImageRemove && !disabled && (
                     <Button

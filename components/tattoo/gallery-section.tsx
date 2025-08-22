@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Button } from "@heroui/button"
 import { Card, CardBody, CardHeader } from "@heroui/card"
 import { Tabs, Tab } from "@heroui/tabs"
@@ -188,10 +189,13 @@ function GalleryItem({ item, onReuse, onDelete, typeLabel, actionLabel = "Use" }
   return (
     <div className="space-y-2">
       <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-        <img
+        <Image
           src={item.thumbnail}
           alt={item.name || typeLabel}
+          width={200}
+          height={200}
           className="w-full h-full object-cover bg-white"
+          unoptimized
           onLoad={() => {
             console.log('Image loaded successfully:', item.thumbnail.substring(0, 50))
           }}

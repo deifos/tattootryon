@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Link } from '@heroui/link';
 
 import { GitHubIcon, XIcon } from '@/components/icons';
@@ -33,7 +34,7 @@ export function Footer() {
         <div className="flex gap-2 items-center">
 
         <span className='text-default-400 hover:text-default-600 transition-colors'>Built by Vlad </span>
-        <img src="/vlad-pfp.jpg" alt="vlad pfp" className='w-8 h-8 rounded-full'/>
+        <Image src="/vlad-pfp.jpg" alt="vlad pfp" width={32} height={32} className='w-8 h-8 rounded-full'/>
         </div>
         
         <Link

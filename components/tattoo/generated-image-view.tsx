@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Button } from "@heroui/button"
 
 interface GeneratedImageViewProps {
@@ -10,10 +11,13 @@ interface GeneratedImageViewProps {
 export function GeneratedImageView({ generatedImage, onBackToEditor }: GeneratedImageViewProps) {
   return (
     <div className="relative">
-      <img
+      <Image
         src={generatedImage}
         alt="Generated tattoo result"
+        width={800}
+        height={600}
         className="max-w-full max-h-full object-contain rounded"
+        unoptimized
       />
       <Button
         size="sm"

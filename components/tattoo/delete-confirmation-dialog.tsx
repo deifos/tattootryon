@@ -36,7 +36,7 @@ export function DeleteConfirmationDialog({
       isDismissable
     >
       <ModalContent>
-        {(onClose) => (
+        {() => (
           <>
             <ModalHeader className="flex flex-col gap-1">
               {deleteConfirmation.type === 'item' ? 'Delete Item' : 'Clear Gallery'}

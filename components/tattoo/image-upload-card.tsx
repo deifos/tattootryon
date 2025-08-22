@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useCallback, useMemo } from "react"
+import Image from "next/image"
 import { Upload, X, Loader2 } from "lucide-react"
 import { useFileReader } from "@/hooks/useFileReader"
 import { Card, CardBody, CardHeader } from "@heroui/card"
@@ -115,10 +116,13 @@ export function ImageUploadCard({
             </div>
           ) : image ? (
             <div className="relative group">
-              <img
+              <Image
                 src={image}
+                width={400}
+                height={300}
                 alt={title}
                 className="w-full h-48 object-contain bg-gray-50 rounded hover:opacity-90 transition-opacity"
+                unoptimized
               />
               {onImageRemove && !disabled && (
                 <Button

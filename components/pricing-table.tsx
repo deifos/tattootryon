@@ -64,7 +64,6 @@ export function PricingTable({ variant = 'section', className = '' }: PricingTab
         throw new Error(redirectError.message);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
       console.error('Checkout error:', err);
       // You could add a toast notification here
     } finally {
