@@ -13,11 +13,13 @@ import { PricingSection } from "@/components/landing/pricing-section";
 import { FAQ } from "@/components/landing/faq";
 import { CTASection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/footer";
+import { MusicPlayer } from "@/components/music-player";
 
 export default function LandingPage() {
   return (
     <AppBackground variant="default">
       <div className="relative overflow-hidden">
+      <MusicPlayer audioSrc="/sound/tattoo-anarchy.mp3" audioType="audio/mpeg" position="top-right" />
         <Navbar />
         <CircularPatterns />
 
