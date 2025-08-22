@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import Script from "next/script";
 import { siteConfig } from "@/config/site";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,6 +106,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <GoogleAnalytics gtag='G-XQ1BWZY717' />
         <Script
           src='https://www.feedbackbasket.com/api/widget/script/cmem5bhxd0001l804yr6jvf9j'
           strategy='lazyOnload'
