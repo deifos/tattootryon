@@ -19,7 +19,7 @@ export default function LandingPage() {
   return (
     <AppBackground variant="default">
       <div className="relative overflow-hidden">
-      <MusicPlayer audioSrc="/sound/tattoo-anarchy.mp3" audioType="audio/mpeg" position="top-right" />
+      <MusicPlayer audioSrc="/sound/tattoo-anarchy.mp3" audioType="audio/mpeg" position="top-right" songName="Tattoo Anarchy" />
         <Navbar />
         <CircularPatterns />
 

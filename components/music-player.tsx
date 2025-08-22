@@ -10,9 +10,10 @@ interface MusicPlayerProps {
   audioSrc: string;
   audioType?: string;
   position?: Position;
+  songName?: string;
 }
 
-export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bottom-right" }: MusicPlayerProps) {
+export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bottom-right", songName }: MusicPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
   const [isMuted, setIsMuted] = useState(false);
@@ -230,14 +231,15 @@ export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bo
   return (
     <div 
       className={`fixed ${getPositionClasses(position)} z-50 
-        ${isScrolled ? 'bg-blue-100/95' : 'bg-blue-100/30'} 
-        hover:bg-blue-100/95 backdrop-blur-sm rounded-lg shadow-lg 
-        ${isExpanded ? 'p-3' : 'p-2'} 
-        border-2 border-blue-300 
-        ${!isPlaying ? 'animate-pulse-slow' : ''} 
-        transition-all duration-500 ease-in-out transform
-        flex items-center gap-3 overflow-hidden
-        ${isExpanded ? 'w-auto' : 'w-12 h-12'}`}
+        ${isScrolled ? 'bg-black/95 border-red-500' : 'bg-black/80 border-red-600'} 
+        hover:bg-black/95 hover:border-red-400 backdrop-blur-sm rounded-lg shadow-2xl 
+        ${isExpanded ? 'p-4' : 'p-2'} 
+        border-2 transition-all duration-500 ease-in-out transform
+        ${!isPlaying ? 'animate-pulse shadow-red-500/50' : 'shadow-red-600/30'} 
+        hover:scale-105 hover:shadow-red-500/50
+        flex flex-col items-start gap-2 overflow-hidden
+        ${isExpanded ? 'w-auto min-w-[240px]' : 'w-12 h-12'}
+        ${isPlaying ? 'shadow-lg shadow-red-500/40 border-red-500' : ''}`}
       onClick={() => {
         if (!isExpanded) {
           toggleExpanded();
@@ -257,27 +259,31 @@ export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bo
         Your browser does not support the audio element.
       </audio>
       
-      {/* Bubble icon - always visible */}
-      <div className={`flex items-center justify-center ${isExpanded ? '' : 'w-full'}`}>
-        <span 
-          className={`${isExpanded ? 'text-lg' : 'text-xl'} ${!isExpanded && isPlaying ? 'animate-bounce' : ''}`}
-        >
-          🤘
-        </span>
-      </div>
-      
-      {/* Expanded controls - with smooth transition */}
-      <div className={`flex items-center gap-3 ${isExpanded ? 'opacity-100 max-w-[300px]' : 'opacity-0 max-w-0'} transition-all duration-500 ease-in-out overflow-hidden`}>
+      {/* Top row: Icon + Controls */}
+      <div className={`flex items-center gap-3 ${isExpanded ? 'w-full' : 'w-full justify-center'}`}>
+        {/* Bubble icon - always visible */}
+        <div className={`flex items-center justify-center ${isExpanded ? '' : 'w-full'}`}>
+          <span 
+            className={`${isExpanded ? 'text-lg' : 'text-xl'} ${!isExpanded && isPlaying ? 'animate-bounce' : ''} 
+              filter drop-shadow-lg ${isPlaying ? 'animate-pulse' : ''}`}
+          >
+            🤘
+          </span>
+        </div>
+
+        {/* Expanded controls - with smooth transition */}
+        <div className={`flex items-center gap-2 ${isExpanded ? 'opacity-100 flex-1' : 'opacity-0 w-0'} transition-all duration-500 ease-in-out overflow-hidden`}>
         <>
           {/* Play/Pause button */}
           <Button 
             variant="ghost" 
             isIconOnly
+            size="sm"
             onPress={() => {
               togglePlay();
             }}
             disabled={audioError}
-            className="text-blue-700 hover:text-blue-900 hover:bg-blue-200 ml-1"
+            className="text-red-400 hover:text-red-200 hover:bg-red-900/50 border border-red-500/30 hover:border-red-400 ml-1 hover:scale-105 transition-all min-w-8 h-8 p-1"
           >
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
           </Button>
@@ -286,11 +292,12 @@ export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bo
           <Button 
             variant="ghost" 
             isIconOnly 
+            size="sm"
             onPress={() => {
               toggleMute();
             }}
             disabled={audioError}
-            className="text-blue-700 hover:text-blue-900 hover:bg-blue-200"
+            className="text-red-400 hover:text-red-200 hover:bg-red-900/50 border border-red-500/30 hover:border-red-400 hover:scale-105 transition-all min-w-8 h-8 p-1"
           >
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
@@ -300,33 +307,54 @@ export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bo
             <Button 
               variant="ghost" 
               isIconOnly
+              size="sm"
               onPress={() => {
                 decreaseVolume();
               }}
               disabled={volume <= 0}
-              className="text-blue-700 hover:text-blue-900 hover:bg-blue-200 h-7 w-7"
+              className="text-red-400 hover:text-red-200 hover:bg-red-900/50 border border-red-500/30 hover:border-red-400 min-w-6 h-6 hover:scale-105 transition-all p-0.5"
             >
               <Minus className="h-3 w-3" />
             </Button>
             
-            <span className="text-xs font-bold text-blue-700 w-8 text-center">
+            <span className="text-xs font-bold text-red-300 w-8 text-center tracking-wider">
               {Math.round(volume * 100)}%
             </span>
             
             <Button 
               variant="ghost" 
               isIconOnly
+              size="sm"
               onPress={() => {
                 increaseVolume();
               }}
               disabled={volume >= 1}
-              className="text-blue-700 hover:text-blue-900 hover:bg-blue-200 h-7 w-7"
+              className="text-red-400 hover:text-red-200 hover:bg-red-900/50 border border-red-500/30 hover:border-red-400 min-w-6 h-6 hover:scale-105 transition-all p-0.5"
             >
               <Plus className="h-3 w-3" />
             </Button>
           </div>
         </>
+        </div>
       </div>
+      
+      {/* Song name - below controls with dope styling */}
+      {isExpanded && songName && (
+        <div className="flex flex-col items-center w-full mt-2 border-t border-red-500/30 pt-2">
+          <div className="text-center">
+            <div className="text-xs text-red-400 font-bold tracking-widest mb-1">
+              {isPlaying ? "♪ NOW PLAYING ♪" : "♪ LFG!!! ♪"}
+            </div>
+            <div className="text-sm font-black uppercase tracking-wider transform -skew-x-12 
+              drop-shadow-lg shadow-red-500/50 
+              bg-gradient-to-r from-red-600 via-red-400 to-red-600 bg-clip-text
+              hover:scale-105 transition-all cursor-default
+              font-mono text-white">
+              {songName}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
