@@ -526,7 +526,7 @@ export function KonvaPreviewCanvas({
             className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
             style={{ 
               minHeight: "500px",
-              touchAction: "none",
+              touchAction: "pan-y",
               WebkitOverflowScrolling: "touch",
               userSelect: "none",
               WebkitUserSelect: "none"

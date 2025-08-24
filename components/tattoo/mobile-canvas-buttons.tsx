@@ -142,11 +142,9 @@ export function MobileCanvasButtons({
   generatedImage,
   isApplying,
   isGenerating,
-  onUploadDrawerOpen,
-  onTattooDrawerOpen,
   onApplyTattoo,
   onReset,
-}: MobileCanvasButtonsProps) {
+}: Omit<MobileCanvasButtonsProps, 'onUploadDrawerOpen' | 'onTattooDrawerOpen'>) {
   return (
     <MobileControlButtons
       baseImage={baseImage}
