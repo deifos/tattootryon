@@ -11,12 +11,20 @@ interface KonvaStageProps {
   baseImageObj: HTMLImageElement | null
   tattooImageObj: HTMLImageElement | null
   tattooScale: number
+  tattooTransform?: {
+    x: number
+    y: number
+    scaleX: number
+    scaleY: number
+    rotation: number
+  }
   selectedId: string | null
   isGenerating: boolean
   onStageClick: (e: Konva.KonvaEventObject<MouseEvent>) => void
   onTattooSelect: () => void
   onTattooDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void
   onTattooDragEnd?: (e: Konva.KonvaEventObject<DragEvent>) => void
+  onTransformEnd?: (transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void
   transformerRef: React.RefObject<Konva.Transformer | null>
   tattooRef: React.RefObject<Konva.Image | null>
   generatedImage?: string | null
@@ -28,12 +36,14 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
     baseImageObj,
     tattooImageObj,
     tattooScale,
+    tattooTransform,
     selectedId,
     isGenerating,
     onStageClick,
     onTattooSelect,
     onTattooDragMove,
     onTattooDragEnd,
+    onTransformEnd,
     transformerRef,
     tattooRef,
     generatedImage,
@@ -74,12 +84,13 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
               <KonvaImage
                 ref={tattooRef}
                 image={tattooImageObj}
-                x={stageSize.width / 2}
-                y={stageSize.height / 2}
+                x={tattooTransform?.x || stageSize.width / 2}
+                y={tattooTransform?.y || stageSize.height / 2}
                 offsetX={tattooImageObj.width / 2}
                 offsetY={tattooImageObj.height / 2}
-                scaleX={tattooScale}
-                scaleY={tattooScale}
+                scaleX={tattooTransform?.scaleX || tattooScale}
+                scaleY={tattooTransform?.scaleY || tattooScale}
+                rotation={tattooTransform?.rotation || 0}
                 draggable
                 name="tattoo"
                 onClick={onTattooSelect}
@@ -88,6 +99,18 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                 onDblTap={onTattooSelect}
                 onDragMove={onTattooDragMove}
                 onDragEnd={onTattooDragEnd}
+                onTransformEnd={(e) => {
+                  const node = e.target as Konva.Image;
+                  if (onTransformEnd && node) {
+                    onTransformEnd({
+                      x: node.x(),
+                      y: node.y(),
+                      scaleX: node.scaleX(),
+                      scaleY: node.scaleY(),
+                      rotation: node.rotation(),
+                    });
+                  }
+                }}
                 onMouseDown={onTattooSelect}
                 onTouchStart={onTattooSelect}
                 listening={true}

@@ -15,9 +15,7 @@ import { LoadingView } from "./loading-view";
 import { KonvaStage } from "./konva-stage";
 import { EmptyState } from "./empty-state";
 import { Card, CardBody, CardHeader } from "@heroui/card";
-import { Button } from "@heroui/button";
-import { Upload, Palette, Zap, RotateCcw, Loader2, Download } from "lucide-react";
-import { DownloadButton } from "@/components/ui/download-button";
+import { MobileCanvasButtons } from "./mobile-canvas-buttons";
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null;
@@ -67,10 +65,20 @@ export function KonvaPreviewCanvas({
   onUploadDrawerOpen,
   onTattooDrawerOpen,
 }: KonvaPreviewCanvasProps) {
-  // State
+  // State with stable references to prevent canvas refresh
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tattooScale, setTattooScale] = useState(1);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isCanvasStable, setIsCanvasStable] = useState(true);
+  
+  // Store tattoo transform state to preserve position during re-renders
+  const [tattooTransform, setTattooTransform] = useState({
+    x: 0,
+    y: 0,
+    scaleX: 1,
+    scaleY: 1,
+    rotation: 0,
+  });
 
   // Refs
   const stageRef = useRef<Konva.Stage>(null);
@@ -78,13 +86,16 @@ export function KonvaPreviewCanvas({
   const transformerRef = useRef<Konva.Transformer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Custom hooks
+  // Custom hooks with stable stage size
   const baseImageLoader = useImageLoader({ onError });
   const tattooImageLoader = useImageLoader({ onError });
   const { stageSize, calculateInitialSize } = useStageSize({
     containerRef,
     baseImage: baseImageLoader.imageObj,
   });
+  
+  // Store initial stage size to prevent scroll-induced changes
+  const [initialStageSize, setInitialStageSize] = useState({ width: 0, height: 0 });
 
   // Hooks for canvas composition and FAL AI
   const { composeImages } = useCanvasComposer();
@@ -114,27 +125,44 @@ export function KonvaPreviewCanvas({
     enabled: selectedId === "tattoo",
   });
 
-  // Load base image when it changes
+  // Load base image when it changes with stable size tracking
   useEffect(() => {
     if (baseImage) {
+      setIsCanvasStable(false);
       setGeneratedImage(null);
       baseImageLoader.loadImage(baseImage).then((img) => {
         if (img) {
           calculateInitialSize(img);
+          // Lock in the stage size when image first loads
+          if (stageSize.width > 0 && stageSize.height > 0) {
+            setInitialStageSize(stageSize);
+          }
+          // Stabilize canvas after image loads
+          setTimeout(() => setIsCanvasStable(true), 200);
         }
       });
     } else {
       baseImageLoader.clearImage();
       setGeneratedImage(null);
+      setInitialStageSize({ width: 0, height: 0 });
+      setIsCanvasStable(true);
     }
   }, [baseImage]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Update initial stage size when stage size changes (only once per image)
+  useEffect(() => {
+    if (stageSize.width > 0 && stageSize.height > 0 && initialStageSize.width === 0) {
+      setInitialStageSize(stageSize);
+    }
+  }, [stageSize, initialStageSize.width]);
 
   // Don't change stage size for generated images - keep original base image dimensions
   // This preserves consistent preview size regardless of generated image size
 
-  // Load tattoo image when it changes
+  // Load tattoo image when it changes with stable selection
   useEffect(() => {
     if (tattooImage) {
+      setIsCanvasStable(false);
       tattooImageLoader.loadImage(tattooImage).then((img) => {
         if (img && stageSize.width && stageSize.height) {
           const scale = calculateTattooScale(
@@ -143,34 +171,57 @@ export function KonvaPreviewCanvas({
             stageSize.height
           );
           setTattooScale(scale);
-          // Auto-select the tattoo when it loads
-          setTimeout(() => setSelectedId("tattoo"), 50);
+          // Initialize tattoo position to center if not set
+          setTattooTransform(prev => ({
+            ...prev,
+            x: prev.x || stageSize.width / 2,
+            y: prev.y || stageSize.height / 2,
+            scaleX: scale,
+            scaleY: scale,
+          }));
+          // Auto-select the tattoo when it loads with stability check
+          setTimeout(() => {
+            setSelectedId("tattoo");
+            setIsCanvasStable(true);
+          }, 100);
         }
       });
     } else {
       tattooImageLoader.clearImage();
       setSelectedId(null);
+      setIsCanvasStable(true);
+      // Reset transform when tattoo is removed
+      setTattooTransform({
+        x: 0,
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+      });
     }
-  }, [tattooImage, stageSize.width, stageSize.height]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tattooImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update tattoo scale when stage size changes
+  // Update tattoo scale when stage size changes (use stable size)
   useEffect(() => {
-    if (tattooImageLoader.imageObj && stageSize.width && stageSize.height) {
+    const activeStageSize = initialStageSize.width > 0 ? initialStageSize : stageSize;
+    if (tattooImageLoader.imageObj && activeStageSize.width && activeStageSize.height) {
       const scale = calculateTattooScale(
         tattooImageLoader.imageObj,
-        stageSize.width,
-        stageSize.height
+        activeStageSize.width,
+        activeStageSize.height
       );
       setTattooScale(scale);
     }
-  }, [tattooImageLoader.imageObj, stageSize]);
+  }, [tattooImageLoader.imageObj, initialStageSize, stageSize]);
 
-  // More robust transformer attachment with mobile-specific handling
+  // Stable transformer attachment that respects canvas stability
   useEffect(() => {
+    if (!isCanvasStable) return; // Don't attach during unstable periods
+    
     let isAttaching = false;
     
     const attachTransformer = () => {
-      if (isAttaching) return;
+      if (isAttaching || !isCanvasStable) return;
       isAttaching = true;
       
       try {
@@ -199,7 +250,7 @@ export function KonvaPreviewCanvas({
       }
     };
 
-    // Multiple attempts for mobile stability
+    // Multiple attempts for mobile stability, only when canvas is stable
     attachTransformer();
     const timeoutId1 = setTimeout(attachTransformer, 50);
     const timeoutId2 = setTimeout(attachTransformer, 150);
@@ -208,22 +259,21 @@ export function KonvaPreviewCanvas({
       clearTimeout(timeoutId1);
       clearTimeout(timeoutId2);
     };
-  }, [selectedId, tattooImageLoader.imageObj]);
+  }, [selectedId, tattooImageLoader.imageObj, isCanvasStable]);
 
-  // Enhanced mobile stability with scroll and resize handling
+  // Minimal event handling to prevent canvas refresh
   useEffect(() => {
     let reattachTimeout: NodeJS.Timeout;
-    let scrollTimeout: NodeJS.Timeout;
     let isReattaching = false;
     
     const reattachTransformer = () => {
-      if (isReattaching || selectedId !== "tattoo") return;
+      if (isReattaching || selectedId !== "tattoo" || !isCanvasStable) return;
       isReattaching = true;
       
       clearTimeout(reattachTimeout);
       reattachTimeout = setTimeout(() => {
         try {
-          if (transformerRef.current && tattooRef.current) {
+          if (transformerRef.current && tattooRef.current && isCanvasStable) {
             const layer = tattooRef.current.getLayer();
             if (layer) {
               transformerRef.current.nodes([tattooRef.current]);
@@ -239,62 +289,35 @@ export function KonvaPreviewCanvas({
       }, 100);
     };
 
-    // Handle visibility changes (tab switching, backgrounding)
+    // Only handle visibility changes - remove scroll and resize listeners
     const handleVisibilityChange = () => {
-      if (selectedId === "tattoo" && !document.hidden) {
+      if (selectedId === "tattoo" && !document.hidden && isCanvasStable) {
         reattachTransformer();
       }
     };
 
-    // Handle scroll events that might affect canvas
-    const handleScroll = () => {
-      if (selectedId === "tattoo") {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          reattachTransformer();
-        }, 150);
-      }
-    };
-
-    // Handle window resize
-    const handleResize = () => {
-      if (selectedId === "tattoo") {
-        setTimeout(reattachTransformer, 200);
-      }
-    };
-
-    // Handle orientation change on mobile
-    const handleOrientationChange = () => {
-      if (selectedId === "tattoo") {
-        setTimeout(reattachTransformer, 300);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleOrientationChange);
+    if (isCanvasStable) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleOrientationChange);
       clearTimeout(reattachTimeout);
-      clearTimeout(scrollTimeout);
     };
-  }, [selectedId]);
+  }, [selectedId, isCanvasStable]);
 
-  // Handle stage click (deselect)
+  // Handle stage click (deselect) with stability preservation
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (e.target === e.target.getStage()) {
+    if (e.target === e.target.getStage() && isCanvasStable) {
       setSelectedId(null);
     }
   };
 
-  // Handle tattoo selection
+  // Handle tattoo selection with stability check
   const handleTattooSelect = () => {
-    setSelectedId("tattoo");
+    if (isCanvasStable) {
+      setSelectedId("tattoo");
+    }
   };
 
   // Handle tattoo drag move
@@ -304,6 +327,12 @@ export function KonvaPreviewCanvas({
     
     const node = e.target as Konva.Image;
     if (node) {
+      // Store current position
+      setTattooTransform(prev => ({
+        ...prev,
+        x: node.x(),
+        y: node.y(),
+      }));
       // Position is automatically updated by Konva
       node.getLayer()?.batchDraw();
     }
@@ -314,6 +343,14 @@ export function KonvaPreviewCanvas({
     // Ensure the tattoo stays selected after dragging
     const node = e.target as Konva.Image;
     if (node) {
+      // Store final transform state
+      setTattooTransform({
+        x: node.x(),
+        y: node.y(),
+        scaleX: node.scaleX(),
+        scaleY: node.scaleY(),
+        rotation: node.rotation(),
+      });
       setSelectedId("tattoo");
       node.getLayer()?.batchDraw();
       
@@ -393,15 +430,23 @@ export function KonvaPreviewCanvas({
 
     // Reset tattoo position and scale
     if (tattooRef.current && tattooImageLoader.imageObj) {
-      tattooRef.current.position({
-        x: stageSize.width / 2,
-        y: stageSize.height / 2,
-      });
       const scale = calculateTattooScale(
         tattooImageLoader.imageObj,
         stageSize.width,
         stageSize.height
       );
+      const resetTransform = {
+        x: stageSize.width / 2,
+        y: stageSize.height / 2,
+        scaleX: scale,
+        scaleY: scale,
+        rotation: 0,
+      };
+      setTattooTransform(resetTransform);
+      tattooRef.current.position({
+        x: resetTransform.x,
+        y: resetTransform.y,
+      });
       tattooRef.current.scale({ x: scale, y: scale });
       tattooRef.current.rotation(0);
       tattooRef.current.getLayer()?.batchDraw();
@@ -447,45 +492,19 @@ export function KonvaPreviewCanvas({
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader>Preview Canvas</CardHeader>
-      <CardBody>
-        <div
-          ref={containerRef}
-          className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
-          style={{ 
-            minHeight: "500px",
-            touchAction: "pan-x pan-y pinch-zoom",
-            WebkitOverflowScrolling: "touch"
-          }}
-        >
-          {/* Mobile Upload Buttons - TOP of canvas */}
-          {onUploadDrawerOpen && onTattooDrawerOpen && (
-            <div className="absolute top-4 left-4 right-4 flex gap-2 lg:hidden z-50">
-              <Button
-                color="primary"
-                variant="shadow"
-                startContent={<Upload className="w-4 h-4" />}
-                className="flex-1"
-                onPress={onUploadDrawerOpen}
-                disabled={isApplying}
-                size="sm"
-              >
-                Upload Body
-              </Button>
-              <Button
-                color="secondary"
-                variant="shadow"
-                startContent={<Palette className="w-4 h-4" />}
-                className="flex-1"
-                onPress={onTattooDrawerOpen}
-                disabled={isApplying}
-                size="sm"
-              >
-                Upload/Gen. Tattoo
-              </Button>
-            </div>
-          )}
+    <div className="relative h-full">
+      <Card className="h-full">
+        <CardHeader>Preview Canvas</CardHeader>
+        <CardBody>
+          <div
+            ref={containerRef}
+            className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
+            style={{ 
+              minHeight: "500px",
+              touchAction: "pan-x pan-y pinch-zoom",
+              WebkitOverflowScrolling: "touch"
+            }}
+          >
           {baseImageLoader.isLoading ||
           tattooImageLoader.isLoading ||
           (stageSize.width === 0 && (baseImage || generatedImage)) ? (
@@ -500,16 +519,18 @@ export function KonvaPreviewCanvas({
           ) : baseImage || generatedImage ? (
             <KonvaStage
               ref={stageRef}
-              stageSize={stageSize}
+              stageSize={initialStageSize.width > 0 ? initialStageSize : stageSize}
               baseImageObj={baseImageLoader.imageObj}
               tattooImageObj={tattooImageLoader.imageObj}
               tattooScale={tattooScale}
+              tattooTransform={tattooTransform}
               selectedId={selectedId}
               isGenerating={isGenerating}
               onStageClick={handleStageClick}
               onTattooSelect={handleTattooSelect}
               onTattooDragMove={handleTattooDragMove}
               onTattooDragEnd={handleTattooDragEnd}
+              onTransformEnd={(transform) => setTattooTransform(transform)}
               transformerRef={transformerRef}
               tattooRef={tattooRef}
               generatedImage={generatedImage}
@@ -518,87 +539,46 @@ export function KonvaPreviewCanvas({
             <EmptyState />
           )}
 
-          {/* Mobile Control Buttons - BOTTOM of canvas */}
-          {onUploadDrawerOpen && onTattooDrawerOpen && (
-            <div className="absolute bottom-4 left-4 right-4 lg:hidden">
-              {/* Generate button - only show when both base and tattoo exist */}
-              {(baseImage || generatedImage) && tattooImage && (
-                <div className="flex gap-2 mb-2">
-                  <Button
-                    onPress={handleApplyTattoo}
-                    disabled={isApplying || isGenerating}
-                    className="flex-1"
-                    color="primary"
-                    variant="shadow"
-                    size="sm"
-                  >
-                    {isApplying || isGenerating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4 mr-2" />
-                        Generate
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-              
-              {/* Reset and Download buttons - stacked vertically */}
-              <div className="space-y-2">
-                <Button
-                  variant="shadow"
-                  onPress={resetCanvas}
-                  className="w-full"
-                  size="sm"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2"  />
-                  Reset
-                </Button>
-                {generatedImage && (
-                  <DownloadButton
-                    src={generatedImage}
-                    filename="generated-tattoo-result.png"
-                    variant="solid"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </DownloadButton>
-                )}
-              </div>
+          </div>
+
+          {/* Control Buttons - Hidden on mobile since they're now outside canvas */}
+          <div className="mt-4 justify-center hidden lg:flex">
+            <CanvasControlButtons
+              baseImage={baseImage}
+              tattooImage={tattooImage}
+              generatedImage={generatedImage}
+              isApplying={isApplying}
+              isGenerating={isGenerating}
+              onApplyTattoo={handleApplyTattoo}
+              onReset={resetCanvas}
+              onExportCanvas={exportImage}
+            />
+          </div>
+          {(baseImage || generatedImage) && tattooImage && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-500">
+                Click on the tattoo to select it, then drag to move or use the
+                handles to resize and rotate. Images with multiple tattoos will
+                probably not remove all tattoos.
+                {generatedImage && " You can add tattoos to generated images."}
+              </p>
             </div>
           )}
-        </div>
-
-        {/* Control Buttons - Hidden on mobile since they're now inside canvas */}
-        <div className="mt-4  justify-center hidden lg:flex">
-          <CanvasControlButtons
-            baseImage={baseImage}
-            tattooImage={tattooImage}
-            generatedImage={generatedImage}
-            isApplying={isApplying}
-            isGenerating={isGenerating}
-            onApplyTattoo={handleApplyTattoo}
-            onReset={resetCanvas}
-            onExportCanvas={exportImage}
-          />
-        </div>
-        {(baseImage || generatedImage) && tattooImage && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-500">
-              Click on the tattoo to select it, then drag to move or use the
-              handles to resize and rotate. Images with multiple tattoos will
-              probably not remove all tattoos.
-              {generatedImage && " You can add tattoos to generated images."}
-            </p>
-          </div>
-        )}
-      </CardBody>
-    </Card>
+        </CardBody>
+      </Card>
+      
+      {/* Mobile Canvas Buttons - Completely separate component */}
+      <MobileCanvasButtons
+        baseImage={baseImage}
+        tattooImage={tattooImage}
+        generatedImage={generatedImage}
+        isApplying={isApplying}
+        isGenerating={isGenerating}
+        onUploadDrawerOpen={onUploadDrawerOpen}
+        onTattooDrawerOpen={onTattooDrawerOpen}
+        onApplyTattoo={handleApplyTattoo}
+        onReset={resetCanvas}
+      />
+    </div>
   );
 }
