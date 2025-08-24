@@ -65,6 +65,7 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                 image={displayImageObj}
                 width={stageSize.width}
                 height={stageSize.height}
+                listening={false}
               />
             )}
             
@@ -109,6 +110,16 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                   'bottom-right'
                 ]}
                 rotateAnchorOffset={30}
+                anchorSize={12}
+                anchorStroke="#4285f4"
+                anchorFill="white"
+                anchorStrokeWidth={2}
+                borderStroke="#4285f4"
+                borderStrokeWidth={2}
+                rotateEnabled={true}
+                keepRatio={true}
+                centeredScaling={false}
+                ignoreStroke={true}
               />
             )}
           </Layer>

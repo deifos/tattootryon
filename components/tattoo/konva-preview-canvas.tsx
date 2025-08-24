@@ -129,6 +129,9 @@ export function KonvaPreviewCanvas({
     }
   }, [baseImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Don't change stage size for generated images - keep original base image dimensions
+  // This preserves consistent preview size regardless of generated image size
+
   // Load tattoo image when it changes
   useEffect(() => {
     if (tattooImage) {
@@ -162,39 +165,53 @@ export function KonvaPreviewCanvas({
     }
   }, [tattooImageLoader.imageObj, stageSize]);
 
-  // Handle transformer attachment
+  // Handle transformer attachment - more robust version
   useEffect(() => {
-    if (
-      selectedId === "tattoo" &&
-      tattooRef.current &&
-      transformerRef.current
-    ) {
-      transformerRef.current.nodes([tattooRef.current]);
-      transformerRef.current.getLayer()?.batchDraw();
-    } else if (transformerRef.current) {
-      // Clear transformer when no selection
-      transformerRef.current.nodes([]);
-      transformerRef.current.getLayer()?.batchDraw();
-    }
-  }, [selectedId]);
+    const attachTransformer = () => {
+      if (
+        selectedId === "tattoo" &&
+        tattooRef.current &&
+        transformerRef.current &&
+        tattooImageLoader.imageObj
+      ) {
+        try {
+          transformerRef.current.nodes([tattooRef.current]);
+          transformerRef.current.forceUpdate();
+          transformerRef.current.getLayer()?.batchDraw();
+        } catch (error) {
+          console.warn("Failed to attach transformer:", error);
+        }
+      } else if (transformerRef.current) {
+        // Clear transformer when no selection
+        transformerRef.current.nodes([]);
+        transformerRef.current.getLayer()?.batchDraw();
+      }
+    };
 
-  // Ensure transformer reattaches when tattoo changes
+    // Immediate attachment
+    attachTransformer();
+    
+    // Also try with a small delay for mobile stability
+    const timeoutId = setTimeout(attachTransformer, 50);
+    
+    return () => clearTimeout(timeoutId);
+  }, [selectedId, tattooImageLoader.imageObj]);
+
+  // Prevent transformer issues on stage size changes
   useEffect(() => {
-    if (
-      tattooImageLoader.imageObj &&
-      selectedId === "tattoo" &&
-      tattooRef.current &&
-      transformerRef.current
-    ) {
-      // Small delay to ensure the tattoo image is rendered
-      setTimeout(() => {
+    if (selectedId === "tattoo" && transformerRef.current && tattooRef.current) {
+      // Re-attach transformer after stage resize
+      const timeoutId = setTimeout(() => {
         if (transformerRef.current && tattooRef.current) {
           transformerRef.current.nodes([tattooRef.current]);
+          transformerRef.current.forceUpdate();
           transformerRef.current.getLayer()?.batchDraw();
         }
       }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [tattooImageLoader.imageObj, selectedId]);
+  }, [stageSize, selectedId]);
 
   // Handle stage click (deselect)
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -210,7 +227,9 @@ export function KonvaPreviewCanvas({
 
   // Handle tattoo drag move
   const handleTattooDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Update position during drag (optional for smooth interaction)
+    // Prevent page scroll during drag on mobile
+    e.evt.preventDefault();
+    
     const node = e.target as Konva.Image;
     if (node) {
       // Position is automatically updated by Konva
@@ -225,6 +244,15 @@ export function KonvaPreviewCanvas({
     if (node) {
       setSelectedId("tattoo");
       node.getLayer()?.batchDraw();
+      
+      // Re-attach transformer after drag to ensure it works
+      setTimeout(() => {
+        if (transformerRef.current && tattooRef.current) {
+          transformerRef.current.nodes([tattooRef.current]);
+          transformerRef.current.forceUpdate();
+          transformerRef.current.getLayer()?.batchDraw();
+        }
+      }, 10);
     }
   };
 
@@ -308,6 +336,10 @@ export function KonvaPreviewCanvas({
   // Handle back to editor
   const handleBackToEditor = () => {
     setGeneratedImage(null);
+    
+    // Stage size remains the same - no need to recalculate
+    // This maintains consistent canvas dimensions
+    
     // Re-select tattoo when returning to editor with a small delay
     setTimeout(() => {
       if (tattooImageLoader.imageObj) {
@@ -323,7 +355,10 @@ export function KonvaPreviewCanvas({
         <div
           ref={containerRef}
           className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
-          style={{ minHeight: "500px" }}
+          style={{ 
+            minHeight: "500px",
+            touchAction: "none" // Prevent scroll interference on mobile
+          }}
         >
           {/* Mobile Upload Buttons - TOP of canvas */}
           {onUploadDrawerOpen && onTattooDrawerOpen && (
@@ -360,6 +395,8 @@ export function KonvaPreviewCanvas({
             <GeneratedImageView
               generatedImage={generatedImage}
               onBackToEditor={handleBackToEditor}
+              maxWidth={stageSize.width}
+              maxHeight={stageSize.height}
             />
           ) : baseImage || generatedImage ? (
             <KonvaStage

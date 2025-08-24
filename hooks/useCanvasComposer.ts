@@ -29,11 +29,11 @@ export function useCanvasComposer() {
           transformer.visible(false)
         }
 
-        // Generate the composite image
+        // Generate the composite image with high quality
         const dataUrl = stage.toDataURL({
           mimeType: 'image/png',
           quality: 1.0,
-          pixelRatio: 1,
+          pixelRatio: 2, // Higher resolution for better AI processing
         })
 
         // Restore transformer visibility

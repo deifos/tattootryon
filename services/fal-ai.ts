@@ -76,11 +76,11 @@ export class FalAIService {
           aspect_ratio: request.aspect_ratio || "1:1",
           seed: request.seed,
         },
-        logs: true,
+        logs: false,
         onQueueUpdate: (update) => {
-          if (update.status === "IN_PROGRESS") {
-            update.logs.map((log) => log.message).forEach(console.log);
-          }
+          // if (update.status === "IN_PROGRESS") {
+          //   update.logs.map((log) => log.message).forEach(console.log);
+          // }
         },
       })
 
@@ -122,11 +122,11 @@ export class FalAIService {
           seed: request.seed,
 
         },
-        logs: true,
+        logs: false,
         onQueueUpdate: (update) => {
-          if (update.status === "IN_PROGRESS") {
-            update.logs.map((log) => log.message).forEach(console.log);
-          }
+          // if (update.status === "IN_PROGRESS") {
+          //   update.logs.map((log) => log.message).forEach(console.log);
+          // }
         },
       })
 

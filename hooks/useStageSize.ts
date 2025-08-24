@@ -66,17 +66,26 @@ export function useStageSize({
     }
   }, [containerRef, defaultSize])
 
-  // Handle window resize
+  // Handle window resize with debouncing for mobile stability
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    
     const handleResize = () => {
-      updateStageSize()
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        updateStageSize()
+      }, 150) // Debounce resize events
     }
 
-    window.addEventListener('resize', handleResize)
+    // Initial size calculation
     updateStageSize()
+    
+    // Listen for resize events
+    window.addEventListener('resize', handleResize, { passive: true })
 
     return () => {
       window.removeEventListener('resize', handleResize)
+      clearTimeout(timeoutId)
     }
   }, [updateStageSize])
 
