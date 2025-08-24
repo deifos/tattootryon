@@ -68,6 +68,7 @@ interface TattooGeneratorProps {
   onTattooImageRemove?: () => void
   onError?: (error: string) => void
   disabled?: boolean
+  onDrawerClose?: () => void
 }
 
 export function TattooGenerator({ 
@@ -75,7 +76,8 @@ export function TattooGenerator({
   onTattooImageChange, 
   onTattooImageRemove,
   onError,
-  disabled = false 
+  disabled = false,
+  onDrawerClose
 }: TattooGeneratorProps) {
   const [prompt, setPrompt] = useState("")
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
@@ -94,8 +96,11 @@ export function TattooGenerator({
     if (dataUrl && file) {
       onTattooImageChange(dataUrl, file)
       reset()
+      
+      // Close the drawer after successful upload
+      onDrawerClose?.()
     }
-  }, [dataUrl, file, onTattooImageChange, reset])
+  }, [dataUrl, file, onTattooImageChange, reset, onDrawerClose])
 
   // Handle file upload errors
   useEffect(() => {
@@ -197,6 +202,9 @@ export function TattooGenerator({
         
         // Call the parent handler with the image URL and file
         onTattooImageChange(generatedImageUrl, imageFile)
+        
+        // Close the drawer after successful generation
+        onDrawerClose?.()
       } else {
         throw new Error('No images returned from AI generation')
       }

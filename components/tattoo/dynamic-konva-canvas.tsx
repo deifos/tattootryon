@@ -15,6 +15,8 @@ interface KonvaPreviewCanvasProps {
   onGeneratedResult?: (imageUrl: string) => void
   onTattooRemove?: () => void
   userId?: string
+  onUploadDrawerOpen?: () => void
+  onTattooDrawerOpen?: () => void
 }
 
 // Dynamically import the Konva component with no SSR

@@ -59,7 +59,7 @@ class GalleryStorage {
         
         try {
           localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(cleanedItems))
-          console.log(`Emergency cleanup successful: ${items.length} → ${cleanedItems.length} items`)
+          // console.log(`Emergency cleanup successful: ${items.length} → ${cleanedItems.length} items`)
         } catch (retryError) {
           console.error('Emergency cleanup failed, clearing all storage:', retryError)
           localStorage.removeItem(GALLERY_STORAGE_KEY)
@@ -180,7 +180,7 @@ class GalleryStorage {
     name?: string, 
     bodyPart?: string
   ): Promise<GalleryItem> {
-    console.log('Adding item to gallery:', { type, imageUrl: imageUrl.substring(0, 50), name, isExternal: imageUrl.startsWith('http') })
+    // console.log('Adding item to gallery:', { type, imageUrl: imageUrl.substring(0, 50), name, isExternal: imageUrl.startsWith('http') })
     
     const items = this.getItems()
     

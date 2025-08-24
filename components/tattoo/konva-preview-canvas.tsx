@@ -15,17 +15,21 @@ import { LoadingView } from "./loading-view"
 import { KonvaStage } from "./konva-stage"
 import { EmptyState } from "./empty-state"
 import { Card, CardBody, CardHeader } from "@heroui/card"
+import { Button } from "@heroui/button"
+import { Upload, Palette } from "lucide-react"
 
 interface KonvaPreviewCanvasProps {
-  baseImage: string | null
-  tattooImage: string | null
-  bodyPart?: string
-  onApplyTattoo: () => void
-  isApplying: boolean
-  onError?: (error: string) => void
-  onGeneratedResult?: (imageUrl: string) => void
-  onTattooRemove?: () => void
-  userId?: string
+  baseImage: string | null;
+  tattooImage: string | null;
+  bodyPart?: string;
+  onApplyTattoo: () => void;
+  isApplying: boolean;
+  onError?: (error: string) => void;
+  onGeneratedResult?: (imageUrl: string) => void;
+  onTattooRemove?: () => void;
+  userId?: string;
+  onUploadDrawerOpen?: () => void;
+  onTattooDrawerOpen?: () => void;
 }
 
 
@@ -53,6 +57,8 @@ export function KonvaPreviewCanvas({
   onGeneratedResult,
   onTattooRemove,
   userId,
+  onUploadDrawerOpen,
+  onTattooDrawerOpen,
 }: KonvaPreviewCanvasProps) {
   // State
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -248,7 +254,7 @@ export function KonvaPreviewCanvas({
       <CardBody>
         <div 
           ref={containerRef}
-          className="w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
+          className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
           style={{ minHeight: '500px' }}
         >
           {baseImageLoader.isLoading || tattooImageLoader.isLoading || (stageSize.width === 0 && (baseImage || generatedImage)) ? (
@@ -276,13 +282,41 @@ export function KonvaPreviewCanvas({
           ) : (
             <EmptyState />
           )}
+          
+          {/* Mobile Action Buttons - Only show on mobile and when handlers are provided */}
+          {onUploadDrawerOpen && onTattooDrawerOpen && (
+            <div className="absolute bottom-4 left-4 right-4 flex gap-2 lg:hidden">
+              <Button
+                color="primary"
+                variant="shadow"
+                startContent={<Upload className="w-4 h-4" />}
+                className="flex-1"
+                onPress={onUploadDrawerOpen}
+                disabled={isApplying}
+                size="sm"
+              >
+                Upload Body
+              </Button>
+              <Button
+                color="secondary"
+                variant="shadow"
+                startContent={<Palette className="w-4 h-4" />}
+                className="flex-1"
+                onPress={onTattooDrawerOpen}
+                disabled={isApplying}
+                size="sm"
+              >
+                Upload/Gen. Tattoo
+              </Button>
+            </div>
+          )}
         </div>
 
         {(baseImage || generatedImage) && tattooImage && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-500">
               Click on the tattoo to select it, then drag to move or use the handles to resize and rotate.
-              Press Delete or Backspace to remove the selected tattoo from preview.
+              
               {generatedImage && " You can add tattoos to generated images."}
             </p>
           </div>

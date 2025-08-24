@@ -107,7 +107,7 @@ export class FalAIService {
   static async generateTattoo(request: FalAIRequest): Promise<FalAIResponse> {
     try {
       const loras = request.loraUrl ? [{ path: request.loraUrl, scale: 1 }] : [{ path: TATTOO_LORA_URL, scale: 1 }]
-      console.log(request)
+      // console.log(request)
       
       const result = await falWithCredits.subscribe("fal-ai/flux-kontext-lora", {
         input: {
@@ -167,11 +167,11 @@ export class FalAIService {
   }
 
   static async uploadImageAsDataUrl(dataUrl: string): Promise<string> {
-    console.log('uploadImageAsDataUrl called with:', { 
-      hasDataUrl: !!dataUrl, 
-      length: dataUrl?.length,
-      startsWithData: dataUrl?.startsWith('data:')
-    })
+    // console.log('uploadImageAsDataUrl called with:', { 
+    //   hasDataUrl: !!dataUrl, 
+    //   length: dataUrl?.length,
+    //   startsWithData: dataUrl?.startsWith('data:')
+    // })
 
     // Validate input
     if (!dataUrl || !dataUrl.startsWith('data:')) {
@@ -207,7 +207,7 @@ export class FalAIService {
     } catch (error) {
       console.error('Image upload error:', error)
       // Fallback to data URL if upload fails
-      console.log('Falling back to data URL:', dataUrl.substring(0, 50) + '...')
+      // console.log('Falling back to data URL:', dataUrl.substring(0, 50) + '...')
       return dataUrl
     }
   }

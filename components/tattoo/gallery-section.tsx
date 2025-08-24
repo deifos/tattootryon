@@ -196,11 +196,11 @@ function GalleryItem({ item, onReuse, onDelete, typeLabel, actionLabel = "Use" }
           height={200}
           className="w-full h-full object-cover bg-white"
           unoptimized
-          onLoad={() => {
-            console.log('Image loaded successfully:', item.thumbnail.substring(0, 50))
-          }}
+          // onLoad={() => {
+          //   console.log('Image loaded successfully:', item.thumbnail.substring(0, 50))
+          // }}
           onError={(e) => {
-            console.log('Image failed to load:', item.thumbnail)
+            console.error('Image failed to load:', item.thumbnail)
             // Try original image URL if thumbnail fails
             const target = e.target as HTMLImageElement
             if (target.src !== item.imageUrl) {
