@@ -77,7 +77,7 @@ class GalleryStorage {
   }
 
   private performEmergencyCleanupGeneric(items: GalleryItem[]): GalleryItem[] {
-    console.log('Performing emergency cleanup - storage quota exceeded (generic)')
+    // console.log('Performing emergency cleanup - storage quota exceeded (generic)')
     
     // Keep only the 3 most recent items of each type
     const cleanedItems: GalleryItem[] = []
@@ -96,7 +96,7 @@ class GalleryStorage {
   }
 
   private performEmergencyCleanup(items: GalleryItem[], newItem: GalleryItem): GalleryItem[] {
-    console.log('Performing emergency cleanup - storage quota exceeded')
+    // console.log('Performing emergency cleanup - storage quota exceeded')
     
     // Keep only the 3 most recent items of each type (excluding the new item)
     const cleanedItems: GalleryItem[] = []
