@@ -46,10 +46,10 @@ export function CanvasControlButtons({
         <RotateCcw className="w-4 h-4 mr-2" />
         Reset
       </Button>
-      <Button variant="bordered" size="sm" onPress={onExportCanvas}>
+      {/* <Button variant="bordered" size="sm" onPress={onExportCanvas}>
         <Download className="w-4 h-4 mr-2" />
         Export Canvas
-      </Button>
+      </Button> */}
       {generatedImage && (
         <DownloadButton
           src={generatedImage}
