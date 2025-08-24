@@ -15,6 +15,8 @@ interface KonvaStageProps {
   isGenerating: boolean
   onStageClick: (e: Konva.KonvaEventObject<MouseEvent>) => void
   onTattooSelect: () => void
+  onTattooDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void
+  onTattooDragEnd?: (e: Konva.KonvaEventObject<DragEvent>) => void
   transformerRef: React.RefObject<Konva.Transformer | null>
   tattooRef: React.RefObject<Konva.Image | null>
   generatedImage?: string | null
@@ -30,6 +32,8 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
     isGenerating,
     onStageClick,
     onTattooSelect,
+    onTattooDragMove,
+    onTattooDragEnd,
     transformerRef,
     tattooRef,
     generatedImage,
@@ -51,6 +55,7 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
           width={stageSize.width}
           height={stageSize.height}
           onClick={onStageClick}
+          onTap={onStageClick}
           ref={stageRef}
         >
           <Layer>
@@ -78,6 +83,11 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                 name="tattoo"
                 onClick={onTattooSelect}
                 onTap={onTattooSelect}
+                onDblClick={onTattooSelect}
+                onDblTap={onTattooSelect}
+                onDragMove={onTattooDragMove}
+                onDragEnd={onTattooDragEnd}
+                listening={true}
               />
             )}
 

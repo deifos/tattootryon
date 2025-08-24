@@ -129,6 +129,8 @@ export function KonvaPreviewCanvas({
         if (img && stageSize.width && stageSize.height) {
           const scale = calculateTattooScale(img, stageSize.width, stageSize.height)
           setTattooScale(scale)
+          // Auto-select the tattoo when it loads
+          setTimeout(() => setSelectedId("tattoo"), 50)
         }
       })
     } else {
@@ -152,8 +154,25 @@ export function KonvaPreviewCanvas({
     if (selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
       transformerRef.current.nodes([tattooRef.current])
       transformerRef.current.getLayer()?.batchDraw()
+    } else if (transformerRef.current) {
+      // Clear transformer when no selection
+      transformerRef.current.nodes([])
+      transformerRef.current.getLayer()?.batchDraw()
     }
   }, [selectedId])
+
+  // Ensure transformer reattaches when tattoo changes
+  useEffect(() => {
+    if (tattooImageLoader.imageObj && selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
+      // Small delay to ensure the tattoo image is rendered
+      setTimeout(() => {
+        if (transformerRef.current && tattooRef.current) {
+          transformerRef.current.nodes([tattooRef.current])
+          transformerRef.current.getLayer()?.batchDraw()
+        }
+      }, 100)
+    }
+  }, [tattooImageLoader.imageObj, selectedId])
 
   // Handle stage click (deselect)
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -165,6 +184,26 @@ export function KonvaPreviewCanvas({
   // Handle tattoo selection
   const handleTattooSelect = () => {
     setSelectedId("tattoo")
+  }
+
+  // Handle tattoo drag move
+  const handleTattooDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    // Update position during drag (optional for smooth interaction)
+    const node = e.target as Konva.Image
+    if (node) {
+      // Position is automatically updated by Konva
+      node.getLayer()?.batchDraw()
+    }
+  }
+
+  // Handle tattoo drag end
+  const handleTattooDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    // Ensure the tattoo stays selected after dragging
+    const node = e.target as Konva.Image
+    if (node) {
+      setSelectedId("tattoo")
+      node.getLayer()?.batchDraw()
+    }
   }
 
   // Apply tattoo using AI
@@ -275,6 +314,8 @@ export function KonvaPreviewCanvas({
               isGenerating={isGenerating}
               onStageClick={handleStageClick}
               onTattooSelect={handleTattooSelect}
+              onTattooDragMove={handleTattooDragMove}
+              onTattooDragEnd={handleTattooDragEnd}
               transformerRef={transformerRef}
               tattooRef={tattooRef}
               generatedImage={generatedImage}
