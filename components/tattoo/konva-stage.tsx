@@ -69,7 +69,7 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
               />
             )}
             
-            {/* Tattoo Image */}
+            {/* Tattoo Image with enhanced mobile touch handling */}
             {tattooImageObj && (
               <KonvaImage
                 ref={tattooRef}
@@ -88,11 +88,14 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                 onDblTap={onTattooSelect}
                 onDragMove={onTattooDragMove}
                 onDragEnd={onTattooDragEnd}
+                onMouseDown={onTattooSelect}
+                onTouchStart={onTattooSelect}
                 listening={true}
+                perfectDrawEnabled={false}
               />
             )}
 
-            {/* Transformer for tattoo */}
+            {/* Transformer for tattoo with enhanced mobile support */}
             {selectedId === "tattoo" && (
               <Transformer
                 ref={transformerRef}
@@ -110,16 +113,19 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                   'bottom-right'
                 ]}
                 rotateAnchorOffset={30}
-                anchorSize={12}
+                anchorSize={16}
                 anchorStroke="#4285f4"
                 anchorFill="white"
-                anchorStrokeWidth={2}
+                anchorStrokeWidth={3}
+                anchorCornerRadius={2}
                 borderStroke="#4285f4"
                 borderStrokeWidth={2}
                 rotateEnabled={true}
                 keepRatio={true}
                 centeredScaling={false}
                 ignoreStroke={true}
+                shouldOverdrawWholeArea={true}
+                listening={true}
               />
             )}
           </Layer>

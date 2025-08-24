@@ -165,53 +165,125 @@ export function KonvaPreviewCanvas({
     }
   }, [tattooImageLoader.imageObj, stageSize]);
 
-  // Handle transformer attachment - more robust version
+  // More robust transformer attachment with mobile-specific handling
   useEffect(() => {
+    let isAttaching = false;
+    
     const attachTransformer = () => {
-      if (
-        selectedId === "tattoo" &&
-        tattooRef.current &&
-        transformerRef.current &&
-        tattooImageLoader.imageObj
-      ) {
-        try {
-          transformerRef.current.nodes([tattooRef.current]);
-          transformerRef.current.forceUpdate();
+      if (isAttaching) return;
+      isAttaching = true;
+      
+      try {
+        if (
+          selectedId === "tattoo" &&
+          tattooRef.current &&
+          transformerRef.current &&
+          tattooImageLoader.imageObj
+        ) {
+          // Ensure tattoo node is properly attached to layer
+          const layer = tattooRef.current.getLayer();
+          if (layer) {
+            transformerRef.current.nodes([tattooRef.current]);
+            transformerRef.current.forceUpdate();
+            layer.batchDraw();
+          }
+        } else if (transformerRef.current) {
+          // Clear transformer when no selection
+          transformerRef.current.nodes([]);
           transformerRef.current.getLayer()?.batchDraw();
-        } catch (error) {
-          console.warn("Failed to attach transformer:", error);
         }
-      } else if (transformerRef.current) {
-        // Clear transformer when no selection
-        transformerRef.current.nodes([]);
-        transformerRef.current.getLayer()?.batchDraw();
+      } catch (error) {
+        console.warn("Failed to attach transformer:", error);
+      } finally {
+        isAttaching = false;
       }
     };
 
-    // Immediate attachment
+    // Multiple attempts for mobile stability
     attachTransformer();
+    const timeoutId1 = setTimeout(attachTransformer, 50);
+    const timeoutId2 = setTimeout(attachTransformer, 150);
     
-    // Also try with a small delay for mobile stability
-    const timeoutId = setTimeout(attachTransformer, 50);
-    
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId1);
+      clearTimeout(timeoutId2);
+    };
   }, [selectedId, tattooImageLoader.imageObj]);
 
-  // Prevent transformer issues on stage size changes
+  // Enhanced mobile stability with scroll and resize handling
   useEffect(() => {
-    if (selectedId === "tattoo" && transformerRef.current && tattooRef.current) {
-      // Re-attach transformer after stage resize
-      const timeoutId = setTimeout(() => {
-        if (transformerRef.current && tattooRef.current) {
-          transformerRef.current.nodes([tattooRef.current]);
-          transformerRef.current.forceUpdate();
-          transformerRef.current.getLayer()?.batchDraw();
+    let reattachTimeout: NodeJS.Timeout;
+    let scrollTimeout: NodeJS.Timeout;
+    let isReattaching = false;
+    
+    const reattachTransformer = () => {
+      if (isReattaching || selectedId !== "tattoo") return;
+      isReattaching = true;
+      
+      clearTimeout(reattachTimeout);
+      reattachTimeout = setTimeout(() => {
+        try {
+          if (transformerRef.current && tattooRef.current) {
+            const layer = tattooRef.current.getLayer();
+            if (layer) {
+              transformerRef.current.nodes([tattooRef.current]);
+              transformerRef.current.forceUpdate();
+              layer.batchDraw();
+            }
+          }
+        } catch (error) {
+          console.warn("Reattach transformer failed:", error);
+        } finally {
+          isReattaching = false;
         }
       }, 100);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [stageSize, selectedId]);
+    };
+
+    // Handle visibility changes (tab switching, backgrounding)
+    const handleVisibilityChange = () => {
+      if (selectedId === "tattoo" && !document.hidden) {
+        reattachTransformer();
+      }
+    };
+
+    // Handle scroll events that might affect canvas
+    const handleScroll = () => {
+      if (selectedId === "tattoo") {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          reattachTransformer();
+        }, 150);
+      }
+    };
+
+    // Handle window resize
+    const handleResize = () => {
+      if (selectedId === "tattoo") {
+        setTimeout(reattachTransformer, 200);
+      }
+    };
+
+    // Handle orientation change on mobile
+    const handleOrientationChange = () => {
+      if (selectedId === "tattoo") {
+        setTimeout(reattachTransformer, 300);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleOrientationChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      clearTimeout(reattachTimeout);
+      clearTimeout(scrollTimeout);
+    };
+  }, [selectedId]);
 
   // Handle stage click (deselect)
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -237,7 +309,7 @@ export function KonvaPreviewCanvas({
     }
   };
 
-  // Handle tattoo drag end
+  // Handle tattoo drag end with enhanced mobile support
   const handleTattooDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Ensure the tattoo stays selected after dragging
     const node = e.target as Konva.Image;
@@ -245,14 +317,40 @@ export function KonvaPreviewCanvas({
       setSelectedId("tattoo");
       node.getLayer()?.batchDraw();
       
-      // Re-attach transformer after drag to ensure it works
-      setTimeout(() => {
-        if (transformerRef.current && tattooRef.current) {
-          transformerRef.current.nodes([tattooRef.current]);
-          transformerRef.current.forceUpdate();
-          transformerRef.current.getLayer()?.batchDraw();
-        }
-      }, 10);
+      // Enhanced re-attachment with multiple attempts for mobile
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      const attemptReattach = () => {
+        attempts++;
+        if (attempts > maxAttempts) return;
+        
+        setTimeout(() => {
+          if (transformerRef.current && tattooRef.current) {
+            try {
+              const layer = tattooRef.current.getLayer();
+              if (layer) {
+                transformerRef.current.nodes([tattooRef.current]);
+                transformerRef.current.forceUpdate();
+                layer.batchDraw();
+                
+                // Verify attachment worked
+                const attachedNodes = transformerRef.current.nodes();
+                if (attachedNodes.length === 0 && attempts < maxAttempts) {
+                  attemptReattach();
+                }
+              }
+            } catch (error) {
+              console.warn(`Reattach attempt ${attempts} failed:`, error);
+              if (attempts < maxAttempts) {
+                attemptReattach();
+              }
+            }
+          }
+        }, attempts * 50); // Increasing delay for each attempt
+      };
+      
+      attemptReattach();
     }
   };
 
@@ -357,7 +455,8 @@ export function KonvaPreviewCanvas({
           className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
           style={{ 
             minHeight: "500px",
-            touchAction: "none" // Prevent scroll interference on mobile
+            touchAction: "pan-x pan-y pinch-zoom",
+            WebkitOverflowScrolling: "touch"
           }}
         >
           {/* Mobile Upload Buttons - TOP of canvas */}
