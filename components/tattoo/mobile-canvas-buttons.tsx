@@ -62,7 +62,7 @@ export function MobileCanvasButtons({
       {/* Mobile Control Buttons - Above instruction text */}
       {/* Show buttons only when there's something meaningful to control */}
       {((baseImage || generatedImage) && tattooImage) || generatedImage ? (
-        <div className="absolute bottom-20 left-4 right-4 lg:hidden z-40">
+        <div className="absolute bottom-10 left-4 right-4 lg:hidden z-40">
           <div className="flex gap-2">
             {/* Generate button - only show when both base and tattoo exist */}
             {(baseImage || generatedImage) && tattooImage && (
