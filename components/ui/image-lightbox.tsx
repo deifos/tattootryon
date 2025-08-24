@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
-import { Modal, ModalContent, ModalBody, useDisclosure } from "@heroui/react"
+import { Modal, ModalContent, ModalBody } from "@heroui/react"
 import { Button } from "@heroui/button"
 import { X, ChevronLeft, ChevronRight, Download, RotateCw } from "lucide-react"
 import { DownloadButton } from "./download-button"

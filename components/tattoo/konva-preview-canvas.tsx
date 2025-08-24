@@ -16,7 +16,8 @@ import { KonvaStage } from "./konva-stage";
 import { EmptyState } from "./empty-state";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Upload, Palette } from "lucide-react";
+import { Upload, Palette, Zap, RotateCcw, Loader2, Download } from "lucide-react";
+import { DownloadButton } from "@/components/ui/download-button";
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null;
@@ -324,6 +325,33 @@ export function KonvaPreviewCanvas({
           className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
           style={{ minHeight: "500px" }}
         >
+          {/* Mobile Upload Buttons - TOP of canvas */}
+          {onUploadDrawerOpen && onTattooDrawerOpen && (
+            <div className="absolute top-4 left-4 right-4 flex gap-2 lg:hidden">
+              <Button
+                color="primary"
+                variant="shadow"
+                startContent={<Upload className="w-4 h-4" />}
+                className="flex-1"
+                onPress={onUploadDrawerOpen}
+                disabled={isApplying}
+                size="sm"
+              >
+                Upload Body
+              </Button>
+              <Button
+                color="secondary"
+                variant="shadow"
+                startContent={<Palette className="w-4 h-4" />}
+                className="flex-1"
+                onPress={onTattooDrawerOpen}
+                disabled={isApplying}
+                size="sm"
+              >
+                Upload/Gen. Tattoo
+              </Button>
+            </div>
+          )}
           {baseImageLoader.isLoading ||
           tattooImageLoader.isLoading ||
           (stageSize.width === 0 && (baseImage || generatedImage)) ? (
@@ -354,37 +382,65 @@ export function KonvaPreviewCanvas({
             <EmptyState />
           )}
 
-          {/* Mobile Action Buttons - Only show on mobile and when handlers are provided */}
+          {/* Mobile Control Buttons - BOTTOM of canvas */}
           {onUploadDrawerOpen && onTattooDrawerOpen && (
-            <div className="absolute bottom-4 left-4 right-4 flex gap-2 lg:hidden">
-              <Button
-                color="primary"
-                variant="shadow"
-                startContent={<Upload className="w-4 h-4" />}
-                className="flex-1"
-                onPress={onUploadDrawerOpen}
-                disabled={isApplying}
-                size="sm"
-              >
-                Upload Body
-              </Button>
-              <Button
-                color="secondary"
-                variant="shadow"
-                startContent={<Palette className="w-4 h-4" />}
-                className="flex-1"
-                onPress={onTattooDrawerOpen}
-                disabled={isApplying}
-                size="sm"
-              >
-                Upload/Gen. Tattoo
-              </Button>
+            <div className="absolute bottom-4 left-4 right-4 lg:hidden">
+              {/* Generate button - only show when both base and tattoo exist */}
+              {(baseImage || generatedImage) && tattooImage && (
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    onPress={handleApplyTattoo}
+                    disabled={isApplying || isGenerating}
+                    className="flex-1"
+                    color="primary"
+                    variant="shadow"
+                    size="sm"
+                  >
+                    {isApplying || isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Reset and Download buttons - stacked vertically */}
+              <div className="space-y-2">
+                <Button
+                  variant="shadow"
+                  onPress={resetCanvas}
+                  className="w-full"
+                  size="sm"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2"  />
+                  Reset
+                </Button>
+                {generatedImage && (
+                  <DownloadButton
+                    src={generatedImage}
+                    filename="generated-tattoo-result.png"
+                    variant="solid"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </DownloadButton>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Control Buttons */}
-        <div className="mt-4 flex justify-center">
+        {/* Control Buttons - Hidden on mobile since they're now inside canvas */}
+        <div className="mt-4  justify-center hidden lg:flex">
           <CanvasControlButtons
             baseImage={baseImage}
             tattooImage={tattooImage}
@@ -400,7 +456,8 @@ export function KonvaPreviewCanvas({
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-500">
               Click on the tattoo to select it, then drag to move or use the
-              handles to resize and rotate.
+              handles to resize and rotate. Images with multiple tattoos will
+              probably not remove all tattoos.
               {generatedImage && " You can add tattoos to generated images."}
             </p>
           </div>
