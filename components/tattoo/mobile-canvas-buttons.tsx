@@ -59,57 +59,63 @@ export function MobileCanvasButtons({
         </Button>
       </div>
 
-      {/* Mobile Control Buttons - BOTTOM */}
-      <div className="absolute bottom-4 left-4 right-4 lg:hidden z-40">
-        <div className="flex gap-2">
-          {/* Generate button - only show when both base and tattoo exist */}
-          {(baseImage || generatedImage) && tattooImage && (
-            <Button
-              onPress={onApplyTattoo}
-              disabled={isApplying || isGenerating}
-              className="flex-1"
-              color="primary"
-              variant="shadow"
-              size="sm"
-            >
-              {isApplying || isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 mr-2" />
-                  Generate
-                </>
-              )}
-            </Button>
-          )}
-          
-          <Button
-            variant="shadow"
-            onPress={onReset}
-            className="flex-1"
-            size="sm"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset
-          </Button>
-          
-          {generatedImage && (
-            <DownloadButton
-              src={generatedImage}
-              filename="generated-tattoo-result.png"
-              variant="solid"
-              size="sm"
-              className="flex-1"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </DownloadButton>
-          )}
+      {/* Mobile Control Buttons - Above instruction text */}
+      {/* Show buttons only when there's something meaningful to control */}
+      {((baseImage || generatedImage) && tattooImage) || generatedImage ? (
+        <div className="absolute bottom-20 left-4 right-4 lg:hidden z-40">
+          <div className="flex gap-2">
+            {/* Generate button - only show when both base and tattoo exist */}
+            {(baseImage || generatedImage) && tattooImage && (
+              <Button
+                onPress={onApplyTattoo}
+                disabled={isApplying || isGenerating}
+                className="flex-1"
+                color="primary"
+                variant="shadow"
+                size="sm"
+              >
+                {isApplying || isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {/* Reset button - only show when both base/generated image and tattoo exist */}
+            {(baseImage || generatedImage) && tattooImage && (
+              <Button
+                variant="shadow"
+                onPress={onReset}
+                className="flex-1"
+                size="sm"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+            )}
+            
+            {generatedImage && (
+              <DownloadButton
+                src={generatedImage}
+                filename="generated-tattoo-result.png"
+                variant="solid"
+                size="sm"
+                className="flex-1"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </DownloadButton>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
     </>
   );
 }

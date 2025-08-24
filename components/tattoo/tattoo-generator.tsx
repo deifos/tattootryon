@@ -220,7 +220,6 @@ export function TattooGenerator({
 
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold mb-4">Tattoo Design</h3>
       <Tabs aria-label="Tattoo options" selectedKey={selectedTab} onSelectionChange={(key) => setSelectedTab(key as string)}>
         <Tab key="upload" title="Upload">
           <Card>
