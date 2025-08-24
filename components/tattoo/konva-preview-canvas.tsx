@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import Konva from "konva"
-import { useCanvasComposer } from "@/hooks/useCanvasComposer"
-import { useFalAI } from "@/hooks/useFalAI"
-import { useImageLoader } from "@/hooks/useImageLoader"
-import { useKeyboardEvents } from "@/hooks/useKeyboardEvents"
-import { useStageSize } from "@/hooks/useStageSize"
+import { useState, useRef, useEffect } from "react";
+import Konva from "konva";
+import { useCanvasComposer } from "@/hooks/useCanvasComposer";
+import { useFalAI } from "@/hooks/useFalAI";
+import { useImageLoader } from "@/hooks/useImageLoader";
+import { useKeyboardEvents } from "@/hooks/useKeyboardEvents";
+import { useStageSize } from "@/hooks/useStageSize";
 
 // Components
-import { CanvasControlButtons } from "./canvas-control-buttons"
-import { GeneratedImageView } from "./generated-image-view"
-import { LoadingView } from "./loading-view"
-import { KonvaStage } from "./konva-stage"
-import { EmptyState } from "./empty-state"
-import { Card, CardBody, CardHeader } from "@heroui/card"
-import { Button } from "@heroui/button"
-import { Upload, Palette } from "lucide-react"
+import { CanvasControlButtons } from "./canvas-control-buttons";
+import { GeneratedImageView } from "./generated-image-view";
+import { LoadingView } from "./loading-view";
+import { KonvaStage } from "./konva-stage";
+import { EmptyState } from "./empty-state";
+import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Upload, Palette } from "lucide-react";
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null;
@@ -32,21 +32,27 @@ interface KonvaPreviewCanvasProps {
   onTattooDrawerOpen?: () => void;
 }
 
-
 // Helper function to calculate appropriate scale for tattoo image
-const calculateTattooScale = (tattooImg: HTMLImageElement, stageWidth: number, stageHeight: number) => {
-  const maxSize = Math.min(stageWidth, stageHeight) * 0.3
-  const tattooAspectRatio = tattooImg.width / tattooImg.height
-  let targetWidth = maxSize
-  let targetHeight = maxSize / tattooAspectRatio
-  
+const calculateTattooScale = (
+  tattooImg: HTMLImageElement,
+  stageWidth: number,
+  stageHeight: number
+) => {
+  const maxSize = Math.min(stageWidth, stageHeight) * 0.3;
+  const tattooAspectRatio = tattooImg.width / tattooImg.height;
+  let targetWidth = maxSize;
+  let targetHeight = maxSize / tattooAspectRatio;
+
   if (targetHeight > maxSize) {
-    targetHeight = maxSize
-    targetWidth = maxSize * tattooAspectRatio
+    targetHeight = maxSize;
+    targetWidth = maxSize * tattooAspectRatio;
   }
-  
-  return Math.min(targetWidth / tattooImg.width, targetHeight / tattooImg.height)
-}
+
+  return Math.min(
+    targetWidth / tattooImg.width,
+    targetHeight / tattooImg.height
+  );
+};
 
 export function KonvaPreviewCanvas({
   baseImage,
@@ -61,249 +67,273 @@ export function KonvaPreviewCanvas({
   onTattooDrawerOpen,
 }: KonvaPreviewCanvasProps) {
   // State
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [tattooScale, setTattooScale] = useState(1)
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [tattooScale, setTattooScale] = useState(1);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   // Refs
-  const stageRef = useRef<Konva.Stage>(null)
-  const tattooRef = useRef<Konva.Image>(null)
-  const transformerRef = useRef<Konva.Transformer>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<Konva.Stage>(null);
+  const tattooRef = useRef<Konva.Image>(null);
+  const transformerRef = useRef<Konva.Transformer>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Custom hooks
-  const baseImageLoader = useImageLoader({ onError })
-  const tattooImageLoader = useImageLoader({ onError })
-  const { stageSize, calculateInitialSize } = useStageSize({ 
-    containerRef, 
-    baseImage: baseImageLoader.imageObj 
-  })
+  const baseImageLoader = useImageLoader({ onError });
+  const tattooImageLoader = useImageLoader({ onError });
+  const { stageSize, calculateInitialSize } = useStageSize({
+    containerRef,
+    baseImage: baseImageLoader.imageObj,
+  });
 
   // Hooks for canvas composition and FAL AI
-  const { composeImages } = useCanvasComposer()
+  const { composeImages } = useCanvasComposer();
   const { generateTattoo, isGenerating } = useFalAI({
     onSuccess: (imageUrl) => {
-      setGeneratedImage(imageUrl)
-      onGeneratedResult?.(imageUrl)
+      setGeneratedImage(imageUrl);
+      onGeneratedResult?.(imageUrl);
       // Clear the tattoo from preview since it's now applied to the generated image
-      onTattooRemove?.()
+      onTattooRemove?.();
     },
     onError: (error) => {
-      onError?.(error)
+      onError?.(error);
     },
     userId,
     baseImageUrl: baseImage || undefined,
     tattooImageUrl: tattooImage || undefined,
-    bodyPart
-  })
+    bodyPart,
+  });
 
   // Keyboard events
   useKeyboardEvents({
     onDelete: () => {
-      if (selectedId === 'tattoo') {
-        onTattooRemove?.()
+      if (selectedId === "tattoo") {
+        onTattooRemove?.();
       }
     },
-    enabled: selectedId === 'tattoo'
-  })
+    enabled: selectedId === "tattoo",
+  });
 
   // Load base image when it changes
   useEffect(() => {
     if (baseImage) {
-      setGeneratedImage(null)
+      setGeneratedImage(null);
       baseImageLoader.loadImage(baseImage).then((img) => {
         if (img) {
-          calculateInitialSize(img)
+          calculateInitialSize(img);
         }
-      })
+      });
     } else {
-      baseImageLoader.clearImage()
-      setGeneratedImage(null)
+      baseImageLoader.clearImage();
+      setGeneratedImage(null);
     }
-  }, [baseImage]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [baseImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load tattoo image when it changes
   useEffect(() => {
     if (tattooImage) {
       tattooImageLoader.loadImage(tattooImage).then((img) => {
         if (img && stageSize.width && stageSize.height) {
-          const scale = calculateTattooScale(img, stageSize.width, stageSize.height)
-          setTattooScale(scale)
+          const scale = calculateTattooScale(
+            img,
+            stageSize.width,
+            stageSize.height
+          );
+          setTattooScale(scale);
           // Auto-select the tattoo when it loads
-          setTimeout(() => setSelectedId("tattoo"), 50)
+          setTimeout(() => setSelectedId("tattoo"), 50);
         }
-      })
+      });
     } else {
-      tattooImageLoader.clearImage()
-      setSelectedId(null)
+      tattooImageLoader.clearImage();
+      setSelectedId(null);
     }
-  }, [tattooImage, stageSize.width, stageSize.height]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tattooImage, stageSize.width, stageSize.height]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update tattoo scale when stage size changes
   useEffect(() => {
     if (tattooImageLoader.imageObj && stageSize.width && stageSize.height) {
-      const scale = calculateTattooScale(tattooImageLoader.imageObj, stageSize.width, stageSize.height)
-      setTattooScale(scale)
+      const scale = calculateTattooScale(
+        tattooImageLoader.imageObj,
+        stageSize.width,
+        stageSize.height
+      );
+      setTattooScale(scale);
     }
-  }, [tattooImageLoader.imageObj, stageSize])
-
-
+  }, [tattooImageLoader.imageObj, stageSize]);
 
   // Handle transformer attachment
   useEffect(() => {
-    if (selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
-      transformerRef.current.nodes([tattooRef.current])
-      transformerRef.current.getLayer()?.batchDraw()
+    if (
+      selectedId === "tattoo" &&
+      tattooRef.current &&
+      transformerRef.current
+    ) {
+      transformerRef.current.nodes([tattooRef.current]);
+      transformerRef.current.getLayer()?.batchDraw();
     } else if (transformerRef.current) {
       // Clear transformer when no selection
-      transformerRef.current.nodes([])
-      transformerRef.current.getLayer()?.batchDraw()
+      transformerRef.current.nodes([]);
+      transformerRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedId])
+  }, [selectedId]);
 
   // Ensure transformer reattaches when tattoo changes
   useEffect(() => {
-    if (tattooImageLoader.imageObj && selectedId === "tattoo" && tattooRef.current && transformerRef.current) {
+    if (
+      tattooImageLoader.imageObj &&
+      selectedId === "tattoo" &&
+      tattooRef.current &&
+      transformerRef.current
+    ) {
       // Small delay to ensure the tattoo image is rendered
       setTimeout(() => {
         if (transformerRef.current && tattooRef.current) {
-          transformerRef.current.nodes([tattooRef.current])
-          transformerRef.current.getLayer()?.batchDraw()
+          transformerRef.current.nodes([tattooRef.current]);
+          transformerRef.current.getLayer()?.batchDraw();
         }
-      }, 100)
+      }, 100);
     }
-  }, [tattooImageLoader.imageObj, selectedId])
+  }, [tattooImageLoader.imageObj, selectedId]);
 
   // Handle stage click (deselect)
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target === e.target.getStage()) {
-      setSelectedId(null)
+      setSelectedId(null);
     }
-  }
+  };
 
   // Handle tattoo selection
   const handleTattooSelect = () => {
-    setSelectedId("tattoo")
-  }
+    setSelectedId("tattoo");
+  };
 
   // Handle tattoo drag move
   const handleTattooDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Update position during drag (optional for smooth interaction)
-    const node = e.target as Konva.Image
+    const node = e.target as Konva.Image;
     if (node) {
       // Position is automatically updated by Konva
-      node.getLayer()?.batchDraw()
+      node.getLayer()?.batchDraw();
     }
-  }
+  };
 
   // Handle tattoo drag end
   const handleTattooDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Ensure the tattoo stays selected after dragging
-    const node = e.target as Konva.Image
+    const node = e.target as Konva.Image;
     if (node) {
-      setSelectedId("tattoo")
-      node.getLayer()?.batchDraw()
+      setSelectedId("tattoo");
+      node.getLayer()?.batchDraw();
     }
-  }
+  };
 
   // Apply tattoo using AI
   const handleApplyTattoo = async () => {
     if ((!baseImage && !generatedImage) || !tattooImage) {
-      onError?.("Please upload both a base image and a tattoo design")
-      return
+      onError?.("Please upload both a base image and a tattoo design");
+      return;
     }
 
     try {
       // Check if stage is available
       if (!stageRef.current) {
-        throw new Error('Canvas stage not available')
+        throw new Error("Canvas stage not available");
       }
 
       // Compose the canvas images into a single image
-      const composition = await composeImages(stageRef as React.RefObject<Konva.Stage>)
-      
-      
+      const composition = await composeImages(
+        stageRef as React.RefObject<Konva.Stage>
+      );
+
       // Generate the tattoo application using FAL AI
-      const prompt = bodyPart ? `Apply this tattoo to the ${bodyPart}` : 'Apply this tattoo to the person'
-      await generateTattoo(composition.dataUrl, prompt)
+      const prompt = bodyPart
+        ? `Apply this tattoo to the ${bodyPart}`
+        : "Apply this tattoo to the person";
+      await generateTattoo(composition.dataUrl, prompt);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to apply tattoo. Please try again."
-      onError?.(errorMessage)
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to apply tattoo. Please try again.";
+      onError?.(errorMessage);
     }
-  }
+  };
 
   // Reset canvas
   const resetCanvas = () => {
-    setSelectedId(null)
-    setGeneratedImage(null)
-    
+    setSelectedId(null);
+    setGeneratedImage(null);
+
     // Reset tattoo position and scale
     if (tattooRef.current && tattooImageLoader.imageObj) {
       tattooRef.current.position({
         x: stageSize.width / 2,
-        y: stageSize.height / 2
-      })
-      const scale = calculateTattooScale(tattooImageLoader.imageObj, stageSize.width, stageSize.height)
-      tattooRef.current.scale({ x: scale, y: scale })
-      tattooRef.current.rotation(0)
-      tattooRef.current.getLayer()?.batchDraw()
+        y: stageSize.height / 2,
+      });
+      const scale = calculateTattooScale(
+        tattooImageLoader.imageObj,
+        stageSize.width,
+        stageSize.height
+      );
+      tattooRef.current.scale({ x: scale, y: scale });
+      tattooRef.current.rotation(0);
+      tattooRef.current.getLayer()?.batchDraw();
     }
-  }
+  };
 
   // Export canvas image
   const exportImage = () => {
     if (!stageRef.current) {
-      onError?.("Canvas not available for export")
-      return
+      onError?.("Canvas not available for export");
+      return;
     }
 
     try {
-      const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 })
-      
-      // Create download link
-      const link = document.createElement('a')
-      link.download = 'tattoo-canvas.png'
-      link.href = dataURL
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } catch (error) {
-      console.error("Failed to export canvas image:", error)
-      onError?.("Failed to export canvas image")
-    }
-  }
+      const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 });
 
+      // Create download link
+      const link = document.createElement("a");
+      link.download = "tattoo-canvas.png";
+      link.href = dataURL;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Failed to export canvas image:", error);
+      onError?.("Failed to export canvas image");
+    }
+  };
 
   // Handle back to editor
   const handleBackToEditor = () => {
-    setGeneratedImage(null)
+    setGeneratedImage(null);
     // Re-select tattoo when returning to editor with a small delay
     setTimeout(() => {
       if (tattooImageLoader.imageObj) {
-        setSelectedId("tattoo")
+        setSelectedId("tattoo");
       }
-    }, 100)
-  }
+    }, 100);
+  };
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        Preview Canvas
-      </CardHeader>
+      <CardHeader>Preview Canvas</CardHeader>
       <CardBody>
-        <div 
+        <div
           ref={containerRef}
           className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
-          style={{ minHeight: '500px' }}
+          style={{ minHeight: "500px" }}
         >
-          {baseImageLoader.isLoading || tattooImageLoader.isLoading || (stageSize.width === 0 && (baseImage || generatedImage)) ? (
+          {baseImageLoader.isLoading ||
+          tattooImageLoader.isLoading ||
+          (stageSize.width === 0 && (baseImage || generatedImage)) ? (
             <LoadingView />
           ) : generatedImage && !tattooImage ? (
-            <GeneratedImageView 
+            <GeneratedImageView
               generatedImage={generatedImage}
               onBackToEditor={handleBackToEditor}
             />
-          ) : (baseImage || generatedImage) ? (
+          ) : baseImage || generatedImage ? (
             <KonvaStage
               ref={stageRef}
               stageSize={stageSize}
@@ -323,7 +353,7 @@ export function KonvaPreviewCanvas({
           ) : (
             <EmptyState />
           )}
-          
+
           {/* Mobile Action Buttons - Only show on mobile and when handlers are provided */}
           {onUploadDrawerOpen && onTattooDrawerOpen && (
             <div className="absolute bottom-4 left-4 right-4 flex gap-2 lg:hidden">
@@ -353,16 +383,6 @@ export function KonvaPreviewCanvas({
           )}
         </div>
 
-        {(baseImage || generatedImage) && tattooImage && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-500">
-              Click on the tattoo to select it, then drag to move or use the handles to resize and rotate.
-              
-              {generatedImage && " You can add tattoos to generated images."}
-            </p>
-          </div>
-        )}
-
         {/* Control Buttons */}
         <div className="mt-4 flex justify-center">
           <CanvasControlButtons
@@ -376,7 +396,16 @@ export function KonvaPreviewCanvas({
             onExportCanvas={exportImage}
           />
         </div>
+        {(baseImage || generatedImage) && tattooImage && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-500">
+              Click on the tattoo to select it, then drag to move or use the
+              handles to resize and rotate.
+              {generatedImage && " You can add tattoos to generated images."}
+            </p>
+          </div>
+        )}
       </CardBody>
     </Card>
-  )
+  );
 }

@@ -85,7 +85,9 @@ export function TattooGenerator({
   const [selectedTab, setSelectedTab] = useState("upload")
   
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { dataUrl, file, error, isLoading, readFile, reset } = useFileReader()
+  const { dataUrl, file, error, isLoading, readFile, reset } = useFileReader({
+    enableProcessing: true
+  })
   const { decrementCredits } = useCreditsStore()
 
   // Memoize tattoo styles to prevent recreation
