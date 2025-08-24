@@ -15,7 +15,7 @@ import { LoadingView } from "./loading-view";
 import { KonvaStage } from "./konva-stage";
 import { EmptyState } from "./empty-state";
 import { Card, CardBody, CardHeader } from "@heroui/card";
-import { MobileCanvasButtons } from "./mobile-canvas-buttons";
+import { MobileUploadButtons, MobileControlButtons } from "./mobile-canvas-buttons";
 
 interface KonvaPreviewCanvasProps {
   baseImage: string | null;
@@ -514,6 +514,13 @@ export function KonvaPreviewCanvas({
       <Card className="h-full">
         <CardHeader>Preview Canvas</CardHeader>
         <CardBody>
+          {/* Mobile Upload Buttons - Above canvas */}
+          <MobileUploadButtons
+            isApplying={isApplying}
+            onUploadDrawerOpen={onUploadDrawerOpen}
+            onTattooDrawerOpen={onTattooDrawerOpen}
+          />
+          
           <div
             ref={containerRef}
             className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
@@ -574,15 +581,13 @@ export function KonvaPreviewCanvas({
               onExportCanvas={exportImage}
             />
           </div>
-          {/* Mobile Canvas Buttons - Below canvas on mobile */}
-          <MobileCanvasButtons
+          {/* Mobile Control Buttons - Below canvas on mobile */}
+          <MobileControlButtons
             baseImage={baseImage}
             tattooImage={tattooImage}
             generatedImage={generatedImage}
             isApplying={isApplying}
             isGenerating={isGenerating}
-            onUploadDrawerOpen={onUploadDrawerOpen}
-            onTattooDrawerOpen={onTattooDrawerOpen}
             onApplyTattoo={handleApplyTattoo}
             onReset={resetCanvas}
           />
