@@ -260,9 +260,9 @@ export function MusicPlayer({ audioSrc, audioType = "audio/mpeg", position = "bo
       </audio>
       
       {/* Top row: Icon + Controls */}
-      <div className={`flex items-center gap-3 ${isExpanded ? 'w-full' : 'w-full justify-center'}`}>
+      <div className={`flex items-center ${isExpanded ? 'gap-3 w-full' : 'w-full h-full justify-center'}`}>
         {/* Bubble icon - always visible */}
-        <div className={`flex items-center justify-center ${isExpanded ? '' : 'w-full'}`}>
+        <div className={`flex items-center justify-center ${isExpanded ? '' : 'w-full h-full'}`}>
           <span 
             className={`${isExpanded ? 'text-lg' : 'text-xl'} ${!isExpanded && isPlaying ? 'animate-bounce' : ''} 
               filter drop-shadow-lg ${isPlaying ? 'animate-pulse' : ''}`}

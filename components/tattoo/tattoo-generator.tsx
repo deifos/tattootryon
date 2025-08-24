@@ -154,11 +154,10 @@ export function TattooGenerator({
         prompt: prompt.trim(),
         style: selectedStyle || undefined,
         stylePromptSuffix: selectedStyleObj?.promptSuffix,
-        image_size: "square",
-        num_inference_steps: 30,
-        guidance_scale: 2.5,
-        enable_safety_checker: true,
-        output_format: "png"
+        aspect_ratio: "1:1",
+        guidance_scale: 3.5,
+        output_format: "png",
+        safety_tolerance: "2"
       })
 
       if (response.images && response.images.length > 0) {

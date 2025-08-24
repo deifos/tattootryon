@@ -36,14 +36,11 @@ interface TattooDesignRequest {
   prompt: string
   style?: string
   stylePromptSuffix?: string
-  image_size?: "square" | "square_hd" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9"
-  num_inference_steps?: number
+  aspect_ratio?: "1:1" | "16:9" | "9:16" | "4:3" | "3:4" | "21:9" | "9:21" | "3:2" | "2:3"
   guidance_scale?: number
   num_images?: number
-  enable_safety_checker?: boolean
-  output_format?: "png" | "jpeg" | "webp"
-  negative_prompt?: string
-  acceleration?: "none" | "auto"
+  output_format?: "png" | "jpeg"
+  safety_tolerance?: "1" | "2" | "3" | "4" | "5" | "6"
   seed?: number
 }
 
@@ -69,17 +66,14 @@ export class FalAIService {
       
       const fullPrompt = `${request.prompt}${stylePrompt}, tattoo design, black ink on white background, high quality, detailed`
 
-      const result = await falWithCredits.subscribe("fal-ai/qwen-image", {
+      const result = await falWithCredits.subscribe("fal-ai/flux-pro/kontext/text-to-image", {
         input: {
           prompt: fullPrompt,
-          image_size: request.image_size || "square",
-          num_inference_steps: request.num_inference_steps || 30,
-          guidance_scale: request.guidance_scale || 2.5,
+          guidance_scale: request.guidance_scale || 3.5,
           num_images: request.num_images || 1,
-          enable_safety_checker: request.enable_safety_checker ?? true,
-          output_format: request.output_format || "png",
-          negative_prompt: request.negative_prompt || "blurry, ugly, low quality, distorted",
-          acceleration: request.acceleration || "none",
+          output_format: request.output_format || "jpeg",
+          safety_tolerance: request.safety_tolerance || "2",
+          aspect_ratio: request.aspect_ratio || "1:1",
           seed: request.seed,
         },
         logs: true,
@@ -120,7 +114,7 @@ export class FalAIService {
           image_url: request.imageUrl,
           prompt: `place this tattoo, ${request.prompt}`,
           loras,
-          num_inference_steps: request.num_inference_steps || 40,
+          num_inference_steps: request.num_inference_steps || 30,
           guidance_scale: request.guidance_scale || 3.5,
           num_images: request.num_images || 1,
           enable_safety_checker: false,
