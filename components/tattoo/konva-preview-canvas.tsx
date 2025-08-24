@@ -327,7 +327,7 @@ export function KonvaPreviewCanvas({
         >
           {/* Mobile Upload Buttons - TOP of canvas */}
           {onUploadDrawerOpen && onTattooDrawerOpen && (
-            <div className="absolute top-4 left-4 right-4 flex gap-2 lg:hidden">
+            <div className="absolute top-4 left-4 right-4 flex gap-2 lg:hidden z-50">
               <Button
                 color="primary"
                 variant="shadow"
