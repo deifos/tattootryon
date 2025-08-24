@@ -70,14 +70,39 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
         >
           <Layer>
             {/* Base Image (either original base or generated image) */}
-            {displayImageObj && (
-              <KonvaImage
-                image={displayImageObj}
-                width={stageSize.width}
-                height={stageSize.height}
-                listening={false}
-              />
-            )}
+            {displayImageObj && (() => {
+              // Calculate dimensions to maintain aspect ratio
+              const imgAspectRatio = displayImageObj.width / displayImageObj.height;
+              const stageAspectRatio = stageSize.width / stageSize.height;
+              
+              let renderWidth = stageSize.width;
+              let renderHeight = stageSize.height;
+              let offsetX = 0;
+              let offsetY = 0;
+              
+              if (imgAspectRatio > stageAspectRatio) {
+                // Image is wider than stage
+                renderHeight = stageSize.width / imgAspectRatio;
+                offsetY = (stageSize.height - renderHeight) / 2;
+              } else {
+                // Image is taller than stage
+                renderWidth = stageSize.height * imgAspectRatio;
+                offsetX = (stageSize.width - renderWidth) / 2;
+              }
+              
+              return (
+                <KonvaImage
+                  image={displayImageObj}
+                  x={offsetX}
+                  y={offsetY}
+                  width={renderWidth}
+                  height={renderHeight}
+                  listening={false}
+                  imageSmoothingEnabled={true}
+                  imageSmoothingQuality="high"
+                />
+              );
+            })()}
             
             {/* Tattoo Image with enhanced mobile touch handling */}
             {tattooImageObj && (
@@ -113,8 +138,10 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                 }}
                 onMouseDown={onTattooSelect}
                 onTouchStart={onTattooSelect}
+                onTouchEnd={onTattooSelect}
                 listening={true}
                 perfectDrawEnabled={false}
+                preventDefault={false}
               />
             )}
 
@@ -136,7 +163,7 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                   'bottom-right'
                 ]}
                 rotateAnchorOffset={30}
-                anchorSize={16}
+                anchorSize={20}
                 anchorStroke="#4285f4"
                 anchorFill="white"
                 anchorStrokeWidth={3}
@@ -144,11 +171,14 @@ export const KonvaStage = forwardRef<Konva.Stage, KonvaStageProps>(
                 borderStroke="#4285f4"
                 borderStrokeWidth={2}
                 rotateEnabled={true}
+                rotationSnaps={[0, 90, 180, 270]}
+                rotationSnapTolerance={10}
                 keepRatio={true}
                 centeredScaling={false}
                 ignoreStroke={true}
                 shouldOverdrawWholeArea={true}
                 listening={true}
+                flipEnabled={false}
               />
             )}
           </Layer>

@@ -234,9 +234,17 @@ export function KonvaPreviewCanvas({
           // Ensure tattoo node is properly attached to layer
           const layer = tattooRef.current.getLayer();
           if (layer) {
+            // Force update for Brave browser compatibility
             transformerRef.current.nodes([tattooRef.current]);
-            transformerRef.current.forceUpdate();
-            layer.batchDraw();
+            transformerRef.current.getLayer()?.batchDraw();
+            
+            // Additional force update for mobile browsers
+            requestAnimationFrame(() => {
+              if (transformerRef.current && tattooRef.current) {
+                transformerRef.current.forceUpdate();
+                layer.batchDraw();
+              }
+            });
           }
         } else if (transformerRef.current) {
           // Clear transformer when no selection
@@ -254,10 +262,12 @@ export function KonvaPreviewCanvas({
     attachTransformer();
     const timeoutId1 = setTimeout(attachTransformer, 50);
     const timeoutId2 = setTimeout(attachTransformer, 150);
+    const timeoutId3 = setTimeout(attachTransformer, 300);
     
     return () => {
       clearTimeout(timeoutId1);
       clearTimeout(timeoutId2);
+      clearTimeout(timeoutId3);
     };
   }, [selectedId, tattooImageLoader.imageObj, isCanvasStable]);
 
@@ -317,6 +327,14 @@ export function KonvaPreviewCanvas({
   const handleTattooSelect = () => {
     if (isCanvasStable) {
       setSelectedId("tattoo");
+      // Force transformer update for mobile browsers
+      setTimeout(() => {
+        if (transformerRef.current && tattooRef.current) {
+          transformerRef.current.nodes([tattooRef.current]);
+          transformerRef.current.forceUpdate();
+          transformerRef.current.getLayer()?.batchDraw();
+        }
+      }, 10);
     }
   };
 
@@ -492,7 +510,7 @@ export function KonvaPreviewCanvas({
   };
 
   return (
-    <div className="relative h-full">
+    <div className="h-full">
       <Card className="h-full">
         <CardHeader>Preview Canvas</CardHeader>
         <CardBody>
@@ -501,8 +519,10 @@ export function KonvaPreviewCanvas({
             className="relative w-full bg-gray-100 rounded-lg overflow-hidden flex justify-center items-center"
             style={{ 
               minHeight: "500px",
-              touchAction: "pan-x pan-y pinch-zoom",
-              WebkitOverflowScrolling: "touch"
+              touchAction: "none",
+              WebkitOverflowScrolling: "touch",
+              userSelect: "none",
+              WebkitUserSelect: "none"
             }}
           >
           {baseImageLoader.isLoading ||
@@ -554,6 +574,19 @@ export function KonvaPreviewCanvas({
               onExportCanvas={exportImage}
             />
           </div>
+          {/* Mobile Canvas Buttons - Below canvas on mobile */}
+          <MobileCanvasButtons
+            baseImage={baseImage}
+            tattooImage={tattooImage}
+            generatedImage={generatedImage}
+            isApplying={isApplying}
+            isGenerating={isGenerating}
+            onUploadDrawerOpen={onUploadDrawerOpen}
+            onTattooDrawerOpen={onTattooDrawerOpen}
+            onApplyTattoo={handleApplyTattoo}
+            onReset={resetCanvas}
+          />
+          
           {(baseImage || generatedImage) && tattooImage && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500">
@@ -566,19 +599,6 @@ export function KonvaPreviewCanvas({
           )}
         </CardBody>
       </Card>
-      
-      {/* Mobile Canvas Buttons - Completely separate component */}
-      <MobileCanvasButtons
-        baseImage={baseImage}
-        tattooImage={tattooImage}
-        generatedImage={generatedImage}
-        isApplying={isApplying}
-        isGenerating={isGenerating}
-        onUploadDrawerOpen={onUploadDrawerOpen}
-        onTattooDrawerOpen={onTattooDrawerOpen}
-        onApplyTattoo={handleApplyTattoo}
-        onReset={resetCanvas}
-      />
     </div>
   );
 }
