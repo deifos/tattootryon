@@ -5,7 +5,7 @@ import { ImageUploadCard } from "./image-upload-card"
 import { TattooGenerator } from "./tattoo-generator"
 import { PreviewCanvas } from "./preview-canvas"
 import { ErrorBoundary } from "../error-boundary"
-import { Upload, Palette } from "lucide-react"
+import { Upload } from "lucide-react"
 import { galleryStorage, type GalleryItem } from "@/lib/gallery-storage"
 import { DeleteConfirmationDialog, type DeleteConfirmationState } from "./delete-confirmation-dialog"
 import { GallerySection } from "./gallery-section"
@@ -61,7 +61,7 @@ export function TattooTryOnClient({ userId }: TattooTryOnClientProps) {
     // Save to gallery
     try {
       // console.log('About to call galleryStorage.addItem...')
-      const result = await galleryStorage.addItem('base', dataUrl, file.name, bodyPart)
+      await galleryStorage.addItem('base', dataUrl, file.name, bodyPart)
       // console.log('Gallery item added successfully:', result)
       const allItems = galleryStorage.getAllItems()
       // console.log('All gallery items after adding:', allItems.length, allItems.filter(i => i.type === 'base').length)

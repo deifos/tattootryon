@@ -214,7 +214,7 @@ export function TattooGenerator({
     } finally {
       setIsGenerating(false)
     }
-  }, [prompt, selectedStyle, disabled, isGenerating, onTattooImageChange, onError, memoizedTattooStyles, decrementCredits])
+  }, [prompt, selectedStyle, disabled, isGenerating, onTattooImageChange, onError, memoizedTattooStyles, decrementCredits, onDrawerClose])
 
   return (
     <div className="w-full">
